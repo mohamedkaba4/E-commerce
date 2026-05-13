@@ -6,7 +6,7 @@ async function getProducts() {
   // const products = await prisma.product.findMany();
   // return products;
   return [
-    { id: '1', name: 'Air Max Alpha', price: 120, cat: "Men's Shoes", img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff" },
+    { id: '1', name: 'Air Max Alpha Pro 2', price: 150, cat: "Men's Shoes", img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff" },
     { id: '2', name: 'Dri-FIT Pro', price: 45, cat: "Apparel", img: "https://images.unsplash.com/photo-1491553895911-0055eca6402d" },
   ];
 }
