@@ -1,24 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-black: #111111;
-  --color-brand-charcoal: #333333;
-  --color-retail-gray: #fbfbfd;
-  --color-border-subtle: #d2d2d7;
-  --font-sans: "Inter", "SF Pro Display", system-ui, sans-serif;
+  /* High-end Charcoal instead of pitch black */
+  --color-brand-black: #121212;
+  /* Soft background gray for depth */
+  --color-retail-bg: #f5f5f7;
+  --color-border-subtle: #e5e5e7;
   
-  /* Keep the variable for CSS use */
-  --ease-subtle: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Add this to tell Tailwind that 'ease-subtle' is a valid utility */
-@utility ease-subtle {
-  transition-timing-function: var(--ease-subtle);
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 
 @layer base {
   body {
-    @apply bg-white text-brand-black antialiased selection:bg-brand-black selection:text-white;
+    /* Use the retail-bg here so you can actually see the change! */
+    @apply bg-retail-bg text-brand-black antialiased;
     font-family: var(--font-sans);
     letter-spacing: -0.01em;
   }
@@ -26,12 +21,13 @@
 
 @layer components {
   .section-container {
-    @apply max-w-[1300px] mx-auto px-8 md:px-16 py-20 lg:py-32;
+    /* Max width 1280px is more standard for professional site containers */
+    @apply max-w-7xl mx-auto px-6 md:px-12 py-20;
   }
 
   .nav-link {
-    /* Using transition-colors is usually safer for nav links */
-    @apply text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-charcoal 
-           hover:text-brand-black transition-colors duration-300 ease-subtle;
+    /* Small, tracked-out caps look much more professional */
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500 
+           hover:text-brand-black transition-colors duration-200;
   }
 }
