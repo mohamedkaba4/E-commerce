@@ -9,7 +9,7 @@
 
 @layer base {
   body {
-    @apply bg-white text-black antialiased;
+    @apply bg-pink text-black antialiased;
     font-family: var(--font-inter);
   }
 }
