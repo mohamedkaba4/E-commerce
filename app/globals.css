@@ -1,24 +1,46 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-black: #000000;
-  --color-retail-gray: #f5f5f7;
-  --color-border-light: #e5e5e5;
-  --font-inter: "Inter", sans-serif;
+  /* Use a "Rich Black" for better optical balance than pure #000 */
+  --color-brand-black: #111111;
+  --color-brand-charcoal: #333333;
+  
+  /* Softer neutrals for a more premium feel */
+  --color-retail-gray: #fbfbfd;
+  --color-border-subtle: #d2d2d7;
+  
+  /* Refined typography scale */
+  --font-sans: "Inter", "SF Pro Display", system-ui, sans-serif;
+  
+  /* Custom durations for smoother interactions */
+  --animate-subtle: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @layer base {
   body {
-    @apply bg-white text-black antialiased;
-    font-family: var(--font-inter);
+    /* Using a very dark charcoal for text is easier on the eyes than pure black */
+    @apply bg-white text-brand-black antialiased selection:bg-brand-black selection:text-white;
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em; /* Tighter tracking for a high-end look */
   }
 }
 
 @layer components {
   .section-container {
-    @apply max-w-[1440px] mx-auto px-6 md:px-12 py-16;
+    /* Slightly more breathing room and a slightly smaller max-width for better readability */
+    @apply max-w-[1300px] mx-auto px-8 md:px-16 py-20 lg:py-32;
   }
+
   .nav-link {
-    @apply text-[13px] font-bold uppercase tracking-tight hover:text-neutral-500 transition-colors;
+    /* Reduced font size, increased letter spacing, and a more deliberate hover state */
+    @apply text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-charcoal 
+           hover:text-brand-black transition-all duration-300 ease-subtle;
+    position: relative;
+  }
+  
+  /* Professional Button Pattern (Optional but recommended) */
+  .btn-primary {
+    @apply bg-brand-black text-white px-6 py-3 rounded-full text-sm font-medium
+           hover:bg-brand-charcoal transition-colors duration-200;
   }
 }
