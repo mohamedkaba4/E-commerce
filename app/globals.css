@@ -1,33 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  /* High-end Charcoal instead of pitch black */
   --color-brand-black: #121212;
-  /* Soft background gray for depth */
   --color-retail-bg: #f5f5f7;
-  --color-border-subtle: #e5e5e7;
-  
   --font-sans: "Inter", system-ui, sans-serif;
 }
 
 @layer base {
   body {
-    /* Use the retail-bg here so you can actually see the change! */
     @apply bg-retail-bg text-brand-black antialiased;
     font-family: var(--font-sans);
-    letter-spacing: -0.01em;
+  }
+
+  /* This prevents images from "exploding" and becoming too large */
+  img {
+    @apply max-w-full h-auto block;
   }
 }
 
 @layer components {
   .section-container {
-    /* Max width 1280px is more standard for professional site containers */
-    @apply max-w-7xl mx-auto px-6 md:px-12 py-20;
+    /* Ensure this is set to prevent your site from being too wide on big screens */
+    @apply max-w-7xl mx-auto px-6 md:px-12 py-12 lg:py-20;
   }
 
-  .nav-link {
-    /* Small, tracked-out caps look much more professional */
-    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500 
-           hover:text-brand-black transition-colors duration-200;
+  /* This class specifically helps ecommerce product images look consistent */
+  .product-image-wrapper {
+    @apply aspect-square overflow-hidden rounded-xl bg-white border border-neutral-100 flex items-center justify-center;
   }
 }
