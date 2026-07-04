@@ -1,34 +1,30 @@
-import React from 'react';
-import ProductCard from './ProductCard';
+import Link from "next/link";
 
-const MOCK_PRODUCTS = [
-  { id: 1, name: "Pro Grip Basketball", price: 29, icon: "🏀", category: "BEST SELLER" },
-  { id: 2, name: "Family Camping Tent", price: 150, icon: "🏕️", category: "FAMILY PICK" },
-  { id: 3, name: "Ultra-Light Soccer Ball", price: 25, icon: "⚽", category: "NEW" },
-  { id: 4, name: "Adult Mountain Bike", price: 450, icon: "🚲", category: "ELITE" },
-];
-
-export default function ProductGrid() {
+export default function Navbar() {
   return (
-    <section className="px-6 py-12 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="font-[family-name:var(--font-bebas)] text-5xl tracking-tight text-[#1A1A1A]">
-          READY FOR <span className="text-[#2E7D32]">ADVENTURE?</span>
-        </h2>
-        <button className="font-bold text-[#2E7D32] hover:underline">View All →</button>
-      </div>
+    <header className="w-full bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-neutral-100">
+      <div className="section-container !py-4 flex justify-between items-center">
+        {/* Brand Identity */}
+        <Link href="/" className="text-[15px] font-black tracking-[-0.04em] uppercase">
+          Mavencrest
+        </Link>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        {MOCK_PRODUCTS.map((product) => (
-          <ProductCard 
-            key={product.id}
-            name={product.name}
-            price={product.price}
-            icon={product.icon}
-            category={product.category}
-          />
-        ))}
+        {/* Navigation - Professional Spacing */}
+        <nav className="hidden md:flex items-center gap-10">
+          <Link href="/men" className="nav-link">Men</Link>
+          <Link href="/women" className="nav-link">Women</Link>
+          <Link href="/collections" className="nav-link">Collections</Link>
+          <Link href="/about" className="nav-link">Our Story</Link>
+        </nav>
+
+        {/* Utility Links */}
+        <div className="flex items-center gap-6">
+          <button className="nav-link">Search</button>
+          <Link href="/cart" className="nav-link flex items-center gap-2">
+            Cart <span className="bg-brand-black text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span>
+          </Link>
+        </div>
       </div>
-    </section>
+    </header>
   );
 }

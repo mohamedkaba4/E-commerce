@@ -1,13 +1,23 @@
-import { Bebas_Neue, Nunito } from 'next/font/google';
-import './globals.css';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { Providers } from "./components/Providers";
+import "./globals.css";
 
-const bebas = Bebas_Neue({ weight: '400', subsets: ['latin'], variable: '--font-bebas' });
-const nunito = Nunito({ subsets: ['latin'], variable: '--font-nunito' });
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Mavencrest | Premium Gear",
+  description: "Curated collection of professional athletic gear.",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="${bebas.variable} ${nunito.variable}">
-      <body className="antialiased bg-[#FFFDE7]">{children}</body>
+    <html lang="en">
+      <body className={inter.className}>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
