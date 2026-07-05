@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import ProductCard from './components/ProductCard';
+import ProductCard from '@/components/ProductCard'
 
 // Comprehensive mock data array supplying all metadata profiles safely
 const MOCK_PRODUCTS = [
@@ -25,23 +25,7 @@ export default async function Home() {
       
       {/* Mega Header Navigation */}
       <header className="sticky top-0 z-50 w-full bg-black/90 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-[1600px] mx-auto px-6 md:px-10 h-20 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-[1000] tracking-tighter italic uppercase text-white">
-            MAVENCREST
-          </Link>
-          
-          <nav className="hidden lg:flex items-center gap-10">
-            {categories.map((cat) => (
-              <Link 
-                key={cat.slug} 
-                href={`/categories/${cat.slug}`} 
-                className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors"
-              >
-                {cat.name}
-              </Link>
-            ))}
-          </nav>
-        </div>
+  
       </header>
 
       {/* Main Layout Area */}
@@ -87,17 +71,24 @@ export default async function Home() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {MOCK_PRODUCTS.map((product) => (
-              <ProductCard key={product.id} product={{
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                images: [product.image],
-                slug: product.slug,
-                sizes: product.sizes,
-                colors: product.colors,
-                featured: true,
-                category: { name: product.category }
-              }} />
+              <ProductCard 
+  key={product.id} 
+  product={{
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    images: [product.image],
+    slug: product.slug,
+    sizes: product.sizes,
+    colors: product.colors,
+    featured: true,
+    category: { 
+      id: 'mock-id', 
+      name: product.category, 
+      slug: product.category.toLowerCase().replace(/\s+/g, '-') 
+    }
+  } as any} // 
+/>
             ))}
           </div>
         </div>

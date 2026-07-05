@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import ProductCard from '../components/ui/ProductCard'
 import type { Product } from '@/types'
+import ProductCard from '@/components/ProductCard'
 
 const CATEGORIES = ['All', 'Men', 'Women', 'Kids', 'Running', 'Nutrition']
 const SORT_OPTIONS = [
@@ -12,7 +12,7 @@ const SORT_OPTIONS = [
   { label: 'Price: High–Low', value: 'price-desc' },
 ]
 
-export default function ProductsPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -57,7 +57,6 @@ export default function ProductsPage() {
 
   return (
     <main className="section-container">
-      {/* Header */}
       <div className="mb-10">
         <p className="text-[10px] text-neutral-500 uppercase tracking-[0.3em] mb-2">Catalog</p>
         <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-white">
@@ -70,9 +69,7 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {/* Filters row */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-neutral-900">
-        {/* Category pills */}
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map((cat) => {
             const val = cat === 'All' ? 'all' : cat.toLowerCase()
@@ -93,9 +90,7 @@ export default function ProductsPage() {
           })}
         </div>
 
-        {/* Sort + Search */}
         <div className="flex items-center gap-3">
-          {/* Search input */}
           <div className="relative">
             <input
               type="text"
@@ -113,7 +108,6 @@ export default function ProductsPage() {
             </svg>
           </div>
 
-          {/* Sort select */}
           <select
             value={sort}
             onChange={(e) => setParam('sort', e.target.value)}
@@ -126,7 +120,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Grid */}
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -158,5 +151,19 @@ export default function ProductsPage() {
         </div>
       )}
     </main>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <main className="section-container animate-pulse">
+        <div className="h-8 bg-neutral-900 w-48 rounded mb-4" />
+        <div className="h-4 bg-neutral-900 w-24 rounded mb-10" />
+        <div className="h-12 bg-neutral-900 w-full rounded" />
+      </main>
+    }>
+      <CheckoutContent />
+    </Suspense>
   )
 }

@@ -13,9 +13,9 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  experimental: {
-    allowedDevOrigins: ['e-commerce.mavencrest.site'],
-  },
+  allowedDevOrigins: ['e-commerce.mavencrest.site'],
+  
+  serverExternalPackages: ['@prisma/client', 'pg'],
 };
 
 export default nextConfig;

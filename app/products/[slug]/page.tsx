@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import ProductCard from '../../components/ProductCard'
+import ProductCard from '@/components/ProductCard'
 import type { Product } from '@/types'
 
 const CATEGORIES = ['All', 'Men', 'Women', 'Kids', 'Running', 'Nutrition']

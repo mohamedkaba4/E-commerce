@@ -5,27 +5,27 @@ const prisma = new PrismaClient()
 async function main() {
   // Categories
   const categories = await Promise.all([
-    prisma.category.upsert({
+    prisma.categories.upsert({
       where: { slug: 'men' },
       update: {},
       create: { name: 'Men', slug: 'men' },
     }),
-    prisma.category.upsert({
+    prisma.categories.upsert({
       where: { slug: 'women' },
       update: {},
       create: { name: 'Women', slug: 'women' },
     }),
-    prisma.category.upsert({
+    prisma.categories.upsert({
       where: { slug: 'kids' },
       update: {},
       create: { name: 'Kids', slug: 'kids' },
     }),
-    prisma.category.upsert({
+    prisma.categories.upsert({
       where: { slug: 'running' },
       update: {},
       create: { name: 'Running', slug: 'running' },
     }),
-    prisma.category.upsert({
+    prisma.categories.upsert({
       where: { slug: 'nutrition' },
       update: {},
       create: { name: 'Nutrition', slug: 'nutrition' },
@@ -197,9 +197,10 @@ async function main() {
 
   for (const product of products) {
     await prisma.product.upsert({
-      where: { slug: product.slug },
-      update: product,
-      create: product,
+      // prisma/seed.ts -> around line 200
+    where: { slug: product.slug },
+    update: {},
+    create: product,
     })
   }
 

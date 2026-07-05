@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import ProductCard from '../components/ui/ProductCard'
 import type { Product } from '@/types'
+import ProductCard from '@/components/ProductCard'
 
 const CATEGORIES = ['All', 'Men', 'Women', 'Kids', 'Running', 'Nutrition']
 const SORT_OPTIONS = [
@@ -12,7 +12,7 @@ const SORT_OPTIONS = [
   { label: 'Price: High–Low', value: 'price-desc' },
 ]
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -158,5 +158,20 @@ export default function ProductsPage() {
         </div>
       )}
     </main>
+  )
+}
+
+// Wrap the content component inside Suspense to handle useSearchParams() safely during build
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <main className="section-container animate-pulse">
+        <div className="h-8 bg-neutral-900 w-48 rounded mb-4" />
+        <div className="h-4 bg-neutral-900 w-24 rounded mb-10" />
+        <div className="h-12 bg-neutral-900 w-full rounded" />
+      </main>
+    }>
+      <ProductsContent />
+    </Suspense>
   )
 }

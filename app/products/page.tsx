@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import ProductCard from '../components/ProductCard';
+import ProductCard from '@/components/ProductCard'
 
 // Comprehensive mock data matching a professional sports retail inventory
 const MOCK_PRODUCTS = [
@@ -81,7 +81,7 @@ export default function ProductsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
               {filteredProducts.map((product) => (
                 <div key={product.id} className="group relative flex flex-col bg-zinc-950 border border-zinc-900 p-4 transition-all duration-300 hover:border-zinc-700">
-                  <ProductCard product={product} />
+                  <ProductCard product={product as any} />
                   <div className="mt-4 flex flex-col flex-grow">
                     <p className="text-zinc-500 text-xs font-mono uppercase tracking-wider mb-1">{product.category}</p>
                     <h3 className="text-lg font-bold group-hover:text-[#E0FF00] transition-colors duration-200">{product.name}</h3>
