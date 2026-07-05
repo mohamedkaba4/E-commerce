@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm install
+      - run: npm install --include=dev
 
       - run: npx prisma generate --schema=./prisma/schema.prisma
         env:
