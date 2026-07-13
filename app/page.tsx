@@ -1,8 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import ProductCard from '@/components/ProductCard'
+import ProductCard from '@/components/ProductCard';
 
-// Comprehensive mock data array supplying all metadata profiles safely
 const MOCK_PRODUCTS = [
   { id: '1', name: 'Adidas Continental 80', price: 180, category: 'Men', image: '/adidas80.jpg', description: 'Extreme comfort and timeless design.', slug: 'Adidas Continental 80', sizes: ['8', '9', '10'], colors: ['White', 'Black'] },
   { id: '2', name: 'Apex Elite Court Shoes', price: 140, category: 'Men', image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80', description: 'Maximum lateral stability for high-intensity court play.', slug: 'apex-elite-court', sizes: ['9', '10', '11'], colors: ['White', 'Blue'] },
@@ -22,84 +21,71 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col font-sans">
-      
-      {/* Mega Header Navigation */}
-      <header className="sticky top-0 z-50 w-full bg-black/90 backdrop-blur-xl border-b border-white/5">
-  
-      </header>
-
-      {/* Main Layout Area */}
-      <main className="flex-grow">
-        
-        {/* Discipline Explorer Grid */}
-        <div className="max-w-[1600px] mx-auto px-6 md:px-10 pt-10">
-          <section className="mb-16">
-            <div className="mb-8">
-              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">Explore Training Disciplines</h2>
-              <p className="text-zinc-500 text-sm font-light">Gear customized for your specific operational focus.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {categories.map((cat) => (
-                <Link 
-                  key={cat.slug} 
-                  href={`/categories/${cat.slug}`}
-                  className="relative h-72 group overflow-hidden bg-zinc-900 border border-zinc-900 transition-all duration-300 hover:border-zinc-700 block"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-                  <div 
-                    className="absolute inset-0 scale-100 group-hover:scale-105 transition-transform duration-500 bg-center bg-cover opacity-60" 
-                    style={{ backgroundImage: `url('${cat.img}')` }} 
-                  />
-                  <div className="absolute bottom-4 left-4 z-20">
-                    <h3 className="text-lg font-black uppercase tracking-tight text-white mb-0.5">{cat.name}</h3>
-                    <span className="text-zinc-400 text-[10px] font-mono tracking-widest uppercase group-hover:text-white group-hover:underline">
-                      Explore Gear &rarr;
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {/* Dynamic Showcase Catalog Items Block */}
-        <div className="max-w-[1600px] mx-auto px-6 md:px-10 pb-24">
-          <div className="flex items-baseline justify-between mb-8 border-b border-zinc-900 pb-4">
-            <h2 className="text-2xl font-black uppercase tracking-tight">Featured Training Gear</h2>
+      {/* Discipline Explorer Grid */}
+      <div className="max-w-[1600px] mx-auto px-6 md:px-10 pt-10 w-full">
+        <section className="mb-16">
+          <div className="mb-8">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">Explore Training Disciplines</h2>
+            <p className="text-zinc-500 text-sm font-light">Gear customized for your specific operational focus.</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {MOCK_PRODUCTS.map((product) => (
-              <ProductCard 
-  key={product.id} 
-  product={{
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    images: [product.image],
-    slug: product.slug,
-    sizes: product.sizes,
-    colors: product.colors,
-    featured: true,
-    category: { 
-      id: 'mock-id', 
-      name: product.category, 
-      slug: product.category.toLowerCase().replace(/\s+/g, '-') 
-    }
-  } as any} // 
-/>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {categories.map((cat) => (
+              <Link 
+                key={cat.slug} 
+                href={`/categories/${cat.slug}`}
+                className="relative h-72 group overflow-hidden bg-zinc-900 border border-zinc-900 transition-all duration-300 hover:border-zinc-700 block"
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
+                <div 
+                  className="absolute inset-0 scale-100 group-hover:scale-105 transition-transform duration-500 bg-center bg-cover opacity-60" 
+                  style={{ backgroundImage: `url('${cat.img}')` }} 
+                />
+                <div className="absolute bottom-4 left-4 z-20">
+                  <h3 className="text-lg font-black uppercase tracking-tight text-white mb-0.5">{cat.name}</h3>
+                  <span className="text-zinc-400 text-[10px] font-mono tracking-widest uppercase group-hover:text-white group-hover:underline">
+                    Explore Gear &rarr;
+                  </span>
+                </div>
+              </Link>
             ))}
           </div>
-        </div>
+        </section>
+      </div>
 
-      </main>
+      {/* Dynamic Showcase Catalog Items Block */}
+      <div className="max-w-[1600px] mx-auto px-6 md:px-10 pb-24 w-full">
+        <div className="flex items-baseline justify-between mb-8 border-b border-zinc-900 pb-4">
+          <h2 className="text-2xl font-black uppercase tracking-tight">Featured Training Gear</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {MOCK_PRODUCTS.map((product) => (
+            <ProductCard 
+              key={product.id} 
+              product={{
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                images: [product.image],
+                slug: product.slug,
+                sizes: product.sizes,
+                colors: product.colors,
+                featured: true,
+                category: { 
+                  id: 'mock-id', 
+                  name: product.category, 
+                  slug: product.category.toLowerCase().replace(/\s+/g, '-') 
+                }
+              } as any}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Premium Multi-Column Brand Footer */}
-      <footer className="bg-[#0A0A0A] border-t border-zinc-900 text-zinc-400 text-xs py-16 mt-auto">
+      <footer className="bg-[#0A0A0A] border-t border-zinc-900 text-zinc-400 text-xs py-16 mt-auto w-full">
         <div className="max-w-[1600px] mx-auto px-6 md:px-10 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12 mb-16">
-          
-          {/* Column 1: COMPANY */}
           <div>
             <h4 className="text-white font-bold uppercase tracking-widest mb-5 text-[11px]">Company</h4>
             <ul className="space-y-3 font-medium text-zinc-500 text-xs">
@@ -110,7 +96,6 @@ export default async function Home() {
             </ul>
           </div>
 
-          {/* Column 2: SERVICES */}
           <div>
             <h4 className="text-white font-bold uppercase tracking-widest mb-5 text-[11px]">Services</h4>
             <ul className="space-y-3 font-medium text-zinc-500 text-xs">
@@ -121,7 +106,6 @@ export default async function Home() {
             </ul>
           </div>
 
-          {/* Column 3: SHOP */}
           <div>
             <h4 className="text-white font-bold uppercase tracking-widest mb-5 text-[11px]">Shop</h4>
             <ul className="space-y-3 font-medium text-zinc-500 text-xs">
@@ -132,7 +116,6 @@ export default async function Home() {
             </ul>
           </div>
 
-          {/* Column 4: RESOURCES */}
           <div>
             <h4 className="text-white font-bold uppercase tracking-widest mb-5 text-[11px]">Resources</h4>
             <ul className="space-y-3 font-medium text-zinc-500 text-xs">
@@ -142,20 +125,15 @@ export default async function Home() {
               <li><Link href="/terms" className="hover:text-white transition-colors duration-200">Terms of Service</Link></li>
             </ul>
           </div>
-
         </div>
 
-        {/* Corporate Legal Identification Banner */}
         <div className="max-w-[1600px] mx-auto px-6 md:px-10 pt-10 border-t border-zinc-900 flex flex-col items-center justify-center gap-3 text-center">
-          <span className="text-xl font-[1000] tracking-tighter italic uppercase text-white">
-            MAVENCREST
-          </span>
+          <span className="text-xl font-[1000] tracking-tighter italic uppercase text-white">MAVENCREST</span>
           <p className="text-zinc-600 text-[10px] tracking-widest uppercase font-mono">
             © 2026 MAVENCREST Sporting Goods Co. All Rights Reserved.
           </p>
         </div>
       </footer>
-
     </div>
   );
 }

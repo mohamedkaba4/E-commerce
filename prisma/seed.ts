@@ -1,6 +1,14 @@
-import { PrismaClient } from '@prisma/client'
+import "dotenv/config";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient()
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 async function main() {
   // Categories
@@ -97,7 +105,7 @@ async function main() {
       sizes: ['XS', 'S', 'M', 'L', 'XL'],
       colors: ['Black', 'Volt', 'Slate'],
       tags: ['jacket', 'running', 'technical'],
-      inStock: true,
+      inventory: 20,
     },
     // WOMEN
     {
@@ -144,7 +152,7 @@ async function main() {
       sizes: ['XS', 'S', 'M', 'L', 'XL'],
       colors: ['Volt', 'White', 'Black'],
       tags: ['tee', 'lifestyle'],
-      inStock: true,
+      inventory: 50,
     },
     // KIDS
     {
@@ -191,16 +199,15 @@ async function main() {
       sizes: ['S (W5-7)', 'M (W8-10 / M6-8)', 'L (M9-12)'],
       colors: ['Black', 'White', 'Volt'],
       tags: ['socks', 'running', 'accessories'],
-      inStock: true,
+      inventory: 5,
     },
   ]
 
   for (const product of products) {
     await prisma.product.upsert({
-      // prisma/seed.ts -> around line 200
-    where: { slug: product.slug },
-    update: {},
-    create: product,
+      where: { slug: product.slug },
+      update: {},
+      create: product,
     })
   }
 

@@ -1,6 +1,6 @@
 generator client {
-  provider      = "prisma-client-js"
-  engineType    = "library"  
+  provider   = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
@@ -8,9 +8,23 @@ datasource db {
 }
 
 model Product {
-  id    String @id @default(cuid())
-  slug  String @unique
-  // ... your other product fields
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String
+  price       Float
+  compareAt   Float?
+  images      String[]
+  inventory   Int        @default(0)
+  sizes       String[]
+  colors      String[]
+  tags        String[]
+  featured    Boolean    @default(false)
+  categoryId  String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  category    Categories @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
 model User {
@@ -24,9 +38,10 @@ model User {
 }
 
 model Categories {
-  id        String   @id @default(cuid())
-  slug      String   @unique
+  id        String    @id @default(cuid())
+  slug      String    @unique
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
 }
