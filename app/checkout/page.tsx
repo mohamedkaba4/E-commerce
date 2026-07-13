@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import type { Product } from '@/types'
-import ProductCard from '@/components/ProductCard'
+import ProductCard from '@/app/components/ProductCard';
 
 const CATEGORIES = ['All', 'Men', 'Women', 'Kids', 'Running', 'Nutrition']
 const SORT_OPTIONS = [

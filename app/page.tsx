@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import ProductCard from '@/components/ProductCard';
+import ProductCard from '@/app/components/ProductCard';
 
 const MOCK_PRODUCTS = [
   { id: '1', name: 'Adidas Continental 80', price: 180, category: 'Men', image: '/adidas80.jpg', description: 'Extreme comfort and timeless design.', slug: 'Adidas Continental 80', sizes: ['8', '9', '10'], colors: ['White', 'Black'] },

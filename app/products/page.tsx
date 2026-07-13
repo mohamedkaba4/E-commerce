@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import ProductCard from '@/components/ProductCard'
+import ProductCard from '@/app/components/ProductCard';
 
 // Comprehensive mock data matching a professional sports retail inventory
 const MOCK_PRODUCTS = [
