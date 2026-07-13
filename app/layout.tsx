@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import { Search, User, Heart, ShoppingBag } from "lucide-react";
+import { Providers } from "@/components/Providers";
 import ProductCard from '@/app/components/ProductCard';
 import "./globals.css";
 
