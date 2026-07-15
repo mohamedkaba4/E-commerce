@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import ProductCard from '@/app/components/ProductCard';
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
