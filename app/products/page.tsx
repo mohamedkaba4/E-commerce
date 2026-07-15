@@ -33,7 +33,7 @@ export default function ProductsPage() {
             // NEW SEASON ARRIVALS
           </span>
           <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter max-w-2xl leading-none mb-6">
-            ENGINEERED TO <br/>OUTPERFORM.
+            Loading TO <br/>OUTPERFORM.
           </h1>
           <p className="text-zinc-400 text-lg max-w-md mb-8 font-light">
             Premium performance gear designed, tested, and fine-tuned for elite athletic output.
