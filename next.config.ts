@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'd3njnrug6obz9k.cloudfront.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'd3njnrug6obz9k.cloudfront.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: '*.unsplash.com',
       },
       {
@@ -14,7 +24,6 @@ const nextConfig: NextConfig = {
     ],
   },
   allowedDevOrigins: ['e-commerce.mavencrest.site'],
-  
   serverExternalPackages: ['@prisma/client', 'pg'],
 };
 

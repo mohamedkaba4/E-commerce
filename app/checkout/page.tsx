@@ -8,14 +8,18 @@ import { useState, useEffect } from 'react'
 export default function CheckoutPage() {
   const { items = [], totalPrice, clearCart } = useCart()
   const router = useRouter()
-  const [mounted, setMounted] = useState(false)
+  const [isReady, setIsReady] = useState(false)
 
-  // Prevent hydration mismatch by waiting until mounted on the client
+  // Wait for client mount and allow Zustand store hydration to finish
   useEffect(() => {
-    setMounted(true)
+    const timer = setTimeout(() => {
+      setIsReady(true)
+    }, 150) // Short delay to let persisted local storage state load
+
+    return () => clearTimeout(timer)
   }, [])
 
-  if (!mounted) {
+  if (!isReady) {
     return (
       <main className="max-w-[1600px] mx-auto px-6 md:px-10 py-32 text-center">
         <div className="animate-pulse">
