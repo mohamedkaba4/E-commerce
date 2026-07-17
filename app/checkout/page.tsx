@@ -1,169 +1,187 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import type { Product } from '@/types'
-import ProductCard from '@/app/components/ProductCard';
-
-const CATEGORIES = ['All', 'Men', 'Women', 'Kids', 'Running', 'Nutrition']
-const SORT_OPTIONS = [
-  { label: 'Newest', value: 'newest' },
-  { label: 'Price: Low–High', value: 'price-asc' },
-  { label: 'Price: High–Low', value: 'price-desc' },
-]
-
-function CheckoutContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-
-  const [products, setProducts] = useState<Product[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
-
-  const category = searchParams.get('category') || 'all'
-  const sort = searchParams.get('sort') || 'newest'
-  const q = searchParams.get('q') || ''
-
-  const fetchProducts = useCallback(async () => {
-    setLoading(true)
-    const params = new URLSearchParams()
-    if (category && category !== 'all') params.set('category', category)
-    if (sort) params.set('sort', sort)
-    if (q) params.set('q', q)
-    params.set('limit', '24')
-
-    const res = await fetch(`/api/products?${params}`)
-    const data = await res.json()
-    setProducts(data.products || [])
-    setTotal(data.total || 0)
-    setLoading(false)
-  }, [category, sort, q])
-
-  useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
-
-  const setParam = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value && value !== 'all') {
-      params.set(key, value)
-    } else {
-      params.delete(key)
-    }
-    router.push(`/products?${params}`)
-  }
-
-  const activeCategory = category || 'all'
-
-  return (
-    <main className="section-container">
-      <div className="mb-10">
-        <p className="text-[10px] text-neutral-500 uppercase tracking-[0.3em] mb-2">Catalog</p>
-        <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-white">
-          {activeCategory === 'all'
-            ? 'All Gear'
-            : CATEGORIES.find((c) => c.toLowerCase() === activeCategory) || activeCategory}
-        </h1>
-        {!loading && (
-          <p className="text-xs text-neutral-500 mt-2">{total} product{total !== 1 ? 's' : ''}</p>
-        )}
-      </div>
-
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-neutral-900">
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((cat) => {
-            const val = cat === 'All' ? 'all' : cat.toLowerCase()
-            const active = activeCategory === val
-            return (
-              <button
-                key={cat}
-                onClick={() => setParam('category', val)}
-                className={`text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 transition-all duration-200 ${
-                  active
-                    ? 'bg-brand-accent text-black'
-                    : 'border border-neutral-800 text-neutral-400 hover:border-neutral-600 hover:text-white'
-                }`}
-              >
-                {cat}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <input
-              type="text"
-              defaultValue={q}
-              placeholder="Search gear..."
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  setParam('q', (e.target as HTMLInputElement).value)
-                }
-              }}
-              className="bg-neutral-900 border border-neutral-800 text-xs text-white placeholder-neutral-600 px-3 py-2 pl-8 w-40 focus:outline-none focus:border-neutral-600 transition-colors"
-            />
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-
-          <select
-            value={sort}
-            onChange={(e) => setParam('sort', e.target.value)}
-            className="bg-neutral-900 border border-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-3 py-2 focus:outline-none focus:border-neutral-600 cursor-pointer"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="retail-card animate-pulse">
-              <div className="aspect-[3/4] bg-neutral-900" />
-              <div className="p-3 space-y-2">
-                <div className="h-2 bg-neutral-900 w-16 rounded" />
-                <div className="h-3 bg-neutral-900 w-full rounded" />
-                <div className="h-3 bg-neutral-900 w-12 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : products.length === 0 ? (
-        <div className="text-center py-24">
-          <p className="text-neutral-600 text-sm">No products found.</p>
-          <button
-            onClick={() => router.push('/products')}
-            className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-brand-accent hover:text-white transition-colors"
-          >
-            Clear filters
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      )}
-    </main>
-  )
-}
+import { useCart } from '@/store/useCart'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 export default function CheckoutPage() {
-  return (
-    <Suspense fallback={
-      <main className="section-container animate-pulse">
-        <div className="h-8 bg-neutral-900 w-48 rounded mb-4" />
-        <div className="h-4 bg-neutral-900 w-24 rounded mb-10" />
-        <div className="h-12 bg-neutral-900 w-full rounded" />
+  const { items = [], totalPrice, clearCart } = useCart()
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+
+  // Prevent hydration mismatch by waiting until mounted on the client
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <main className="max-w-[1600px] mx-auto px-6 md:px-10 py-32 text-center">
+        <div className="animate-pulse">
+          <div className="h-8 bg-neutral-900 w-48 mx-auto rounded mb-4" />
+          <div className="h-4 bg-neutral-900 w-24 mx-auto rounded" />
+        </div>
       </main>
-    }>
-      <CheckoutContent />
-    </Suspense>
+    )
+  }
+
+  const safeItems = items || []
+  const total = typeof totalPrice === 'function' ? totalPrice() : 0
+
+  if (safeItems.length === 0) {
+    return (
+      <main className="max-w-[1600px] mx-auto px-6 md:px-10 py-32 text-center">
+        <h1 className="text-3xl font-black uppercase tracking-tighter italic text-neutral-800">Your Cart is Empty</h1>
+        <p className="text-xs text-neutral-500 uppercase tracking-widest mt-2">Add gear to your cart to checkout</p>
+        <Link 
+          href="/products" 
+          className="inline-block mt-8 text-[10px] font-black uppercase tracking-[0.2em] bg-white text-black px-6 py-3 hover:bg-zinc-200 transition-colors"
+        >
+          Browse Gear
+        </Link>
+      </main>
+    )
+  }
+
+  const handlePlaceOrder = (e: React.FormEvent) => {
+    e.preventDefault()
+    alert('Order placed successfully! (Demo)')
+    clearCart()
+    router.push('/')
+  }
+
+  return (
+    <main className="max-w-[1600px] mx-auto px-6 md:px-10 py-16">
+      <div className="mb-12">
+        <p className="text-[10px] text-neutral-500 uppercase tracking-[0.3em] mb-2">Secure Gateway</p>
+        <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-white italic">
+          Checkout
+        </h1>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* Left Form: Delivery/Payment Details */}
+        <form onSubmit={handlePlaceOrder} className="lg:col-span-7 space-y-8">
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-widest text-white border-b border-neutral-900 pb-3 mb-6">
+              1. Delivery Address
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <input 
+                required 
+                type="text" 
+                placeholder="First Name" 
+                className="bg-neutral-950 border border-neutral-800 text-xs text-white p-3 focus:outline-none focus:border-neutral-600"
+              />
+              <input 
+                required 
+                type="text" 
+                placeholder="Last Name" 
+                className="bg-neutral-950 border border-neutral-800 text-xs text-white p-3 focus:outline-none focus:border-neutral-600"
+              />
+              <input 
+                required 
+                type="text" 
+                placeholder="Street Address" 
+                className="sm:col-span-2 bg-neutral-950 border border-neutral-800 text-xs text-white p-3 focus:outline-none focus:border-neutral-600"
+              />
+              <input 
+                required 
+                type="text" 
+                placeholder="City" 
+                className="bg-neutral-950 border border-neutral-800 text-xs text-white p-3 focus:outline-none focus:border-neutral-600"
+              />
+              <input 
+                required 
+                type="text" 
+                placeholder="ZIP / Postal Code" 
+                className="bg-neutral-950 border border-neutral-800 text-xs text-white p-3 focus:outline-none focus:border-neutral-600"
+              />
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-widest text-white border-b border-neutral-900 pb-3 mb-6">
+              2. Payment details
+            </h2>
+            <div className="space-y-4">
+              <input 
+                required 
+                type="text" 
+                placeholder="Card Number" 
+                className="w-full bg-neutral-950 border border-neutral-800 text-xs text-white p-3 focus:outline-none focus:border-neutral-600"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <input 
+                  required 
+                  type="text" 
+                  placeholder="MM / YY" 
+                  className="bg-neutral-950 border border-neutral-800 text-xs text-white p-3 focus:outline-none focus:border-neutral-600"
+                />
+                <input 
+                  required 
+                  type="text" 
+                  placeholder="CVV" 
+                  className="bg-neutral-950 border border-neutral-800 text-xs text-white p-3 focus:outline-none focus:border-neutral-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            className="w-full text-[10px] font-black uppercase tracking-[0.2em] bg-white text-black py-4 hover:bg-neutral-200 transition-colors duration-200 cursor-pointer"
+          >
+            Authorize Payment — ${total.toFixed(2)}
+          </button>
+        </form>
+
+        {/* Right Summary: Cart Items Panel */}
+        <div className="lg:col-span-5 bg-neutral-950 border border-neutral-900 p-6 self-start space-y-6">
+          <h2 className="text-xs font-black uppercase tracking-widest text-white">
+            Order Summary
+          </h2>
+
+          <div className="divide-y divide-neutral-900 max-h-[400px] overflow-y-auto pr-2">
+            {safeItems.map((item) => (
+              <div key={`${item.id}-${item.selectedSize || ''}-${item.selectedColor || ''}`} className="py-4 flex gap-4">
+                <div className="w-16 h-20 bg-neutral-900 flex-shrink-0 relative">
+                  {item.images?.[0] && (
+                    <img 
+                      src={item.images[0]} 
+                      alt={item.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex-grow min-w-0">
+                  <h3 className="text-xs font-bold text-white truncate">{item.name}</h3>
+                  <p className="text-[10px] text-neutral-500 uppercase mt-1">
+                    Qty: {item.quantity} {item.selectedSize && `| Size: ${item.selectedSize}`}
+                  </p>
+                  <p className="text-xs font-semibold text-white mt-2">${(item.price * item.quantity).toFixed(2)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-neutral-900 pt-6 space-y-2">
+            <div className="flex justify-between text-xs text-neutral-400">
+              <span>Subtotal</span>
+              <span>${total.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-xs text-neutral-400">
+              <span>Shipping</span>
+              <span className="uppercase text-[10px] font-bold text-green-500">Free</span>
+            </div>
+            <div className="flex justify-between text-sm font-bold text-white pt-4 border-t border-neutral-900">
+              <span>Total due</span>
+              <span>${total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
   )
 }

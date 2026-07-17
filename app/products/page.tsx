@@ -1,146 +1,169 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import ProductCard from '@/app/components/ProductCard';
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import type { Product } from '@/types'
+import ProductCard from '@/app/components/ProductCard'
 
-// Comprehensive mock data matching a professional sports retail inventory
-const MOCK_PRODUCTS = [
-  { id: '1', name: 'Alpha Carbon V2', price: 180, category: 'Running', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80', description: 'Elite responsiveness and carbon plate propulsion.' },
-  { id: '2', name: 'Apex Elite Court Shoes', price: 140, category: 'Men', image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&auto=format&fit=crop&q=80', description: 'Maximum lateral stability for high-intensity court play.' },
-  { id: '3', name: 'Vanguard Training Hoodie', price: 85, category: 'Women', image: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=600&auto=format&fit=crop&q=80', description: 'Thermal regulation fabric engineered for outdoor sessions.' },
-  { id: '4', name: 'AeroShell Windbreaker', price: 110, category: 'Running', image: 'https://images.unsplash.com/photo-1514989940723-e8e5163ccbe8?w=600&auto=format&fit=crop&q=80', description: 'Ultra-lightweight weather resistance.' },
-  { id: '5', name: 'Pro-Isolate Hydration Matrix', price: 45, category: 'Nutrition', image: 'https://images.unsplash.com/photo-1579758629938-03607ccdbaba?w=600&auto=format&fit=crop&q=80', description: 'Pure whey isolate with optimal amino recovery profile.' },
-  { id: '6', name: 'Youth Court Dominator V1', price: 65, category: 'Kids', image: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=600&auto=format&fit=crop&q=80', description: 'Durable traction and ankle support for young athletes.' },
-];
+const CATEGORIES = ['All', 'Men', 'Women', 'Kids', 'Running', 'Nutrition']
+const SORT_OPTIONS = [
+  { label: 'Newest', value: 'newest' },
+  { label: 'Price: Low–High', value: 'price-asc' },
+  { label: 'Price: High–Low', value: 'price-desc' },
+]
 
-const CATEGORIES = ['All', 'Men', 'Women', 'Kids', 'Running', 'Nutrition', 'Sale'];
+function CatalogContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
-export default function ProductsPage() {
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [products, setProducts] = useState<Product[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
 
-  const filteredProducts = selectedCategory === 'All'
-    ? MOCK_PRODUCTS
-    : MOCK_PRODUCTS.filter(p => p.category.toLowerCase() === selectedCategory.toLowerCase());
+  const category = searchParams.get('category') || 'all'
+  const sort = searchParams.get('sort') || 'newest'
+  const q = searchParams.get('q') || ''
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true)
+    const params = new URLSearchParams()
+    if (category && category !== 'all') params.set('category', category)
+    if (sort) params.set('sort', sort)
+    if (q) params.set('q', q)
+    params.set('limit', '24')
+
+    const res = await fetch(`/api/products?${params}`)
+    const data = await res.json()
+    setProducts(data.products || [])
+    setTotal(data.total || 0)
+    setLoading(false)
+  }, [category, sort, q])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
+
+  const setParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value && value !== 'all') {
+      params.set(key, value)
+    } else {
+      params.delete(key)
+    }
+    router.push(`/products?${params}`)
+  }
+
+  const activeCategory = category || 'all'
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-[#E0FF00] selection:text-black">
-      
-      {/* 1. HERO IMPACT BANNER */}
-      <div className="relative h-[65vh] w-full flex items-center justify-start overflow-hidden bg-zinc-900 border-b border-zinc-800">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(224,255,0,0.15)_0%,transparent_70%)]" />
-        <div className="relative max-w-7xl mx-auto px-6 w-full z-10">
-          <span className="text-[#E0FF00] font-mono text-sm tracking-widest uppercase mb-3 block">
-            // NEW SEASON ARRIVALS
-          </span>
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter max-w-2xl leading-none mb-6">
-            Loading TO <br/>OUTPERFORM.
-          </h1>
-          <p className="text-zinc-400 text-lg max-w-md mb-8 font-light">
-            Premium performance gear designed, tested, and fine-tuned for elite athletic output.
-          </p>
-          <button className="bg-white text-black hover:bg-[#E0FF00] transition-colors duration-300 font-bold uppercase tracking-wider text-sm px-8 py-4">
-            Shop the Collection
-          </button>
-        </div>
+    <main className="max-w-[1600px] mx-auto px-6 md:px-10 py-10">
+      <div className="mb-10">
+        <p className="text-[10px] text-neutral-500 uppercase tracking-[0.3em] mb-2">Catalog</p>
+        <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-white">
+          {activeCategory === 'all'
+            ? 'All Gear'
+            : CATEGORIES.find((c) => c.toLowerCase() === activeCategory) || activeCategory}
+        </h1>
+        {!loading && (
+          <p className="text-xs text-neutral-500 mt-2">{total} product{total !== 1 ? 's' : ''}</p>
+        )}
       </div>
 
-      {/* MAIN CONTENT AREA */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        
-        {/* 2. PRO RETRO STICKY FILTER BAR */}
-        <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-md py-6 border-b border-zinc-800 mb-12 flex items-center justify-between overflow-x-auto scrollbar-none">
-          <div className="flex gap-2 whitespace-nowrap">
-            {CATEGORIES.map((category) => (
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-neutral-900">
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map((cat) => {
+            const val = cat === 'All' ? 'all' : cat.toLowerCase()
+            const active = activeCategory === val
+            return (
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-5 py-2 text-xs font-bold uppercase tracking-widest transition-all duration-200 border ${
-                  selectedCategory === category
-                    ? 'bg-[#E0FF00] text-black border-[#E0FF00]'
-                    : 'bg-transparent text-zinc-400 border-zinc-800 hover:text-white hover:border-zinc-500'
+                key={cat}
+                onClick={() => setParam('category', val)}
+                className={`text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 transition-all duration-200 cursor-pointer ${
+                  active
+                    ? 'bg-white text-black'
+                    : 'border border-neutral-800 text-neutral-400 hover:border-neutral-600 hover:text-white'
                 }`}
               >
-                {category}
+                {cat}
               </button>
-            ))}
-          </div>
-          <div className="hidden md:flex items-center text-xs font-mono text-zinc-500 uppercase tracking-wider">
-            Showing {filteredProducts.length} Results
-          </div>
+            )
+          })}
         </div>
 
-        {/* 3. PERFORMANCE DYNAMIC PRODUCT GRID */}
-        <section className="mb-24">
-          <div className="flex items-baseline justify-between mb-8">
-            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">
-              {selectedCategory} Gear
-            </h2>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              defaultValue={q}
+              placeholder="Search gear..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setParam('q', (e.target as HTMLInputElement).value)
+                }
+              }}
+              className="bg-neutral-900 border border-neutral-800 text-xs text-white placeholder-neutral-600 px-3 py-2 pl-8 w-40 focus:outline-none focus:border-neutral-600 transition-colors"
+            />
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
-          
-          {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
-              {filteredProducts.map((product) => (
-                <div key={product.id} className="group relative flex flex-col bg-zinc-950 border border-zinc-900 p-4 transition-all duration-300 hover:border-zinc-700">
-                  <ProductCard product={product as any} />
-                  <div className="mt-4 flex flex-col flex-grow">
-                    <p className="text-zinc-500 text-xs font-mono uppercase tracking-wider mb-1">{product.category}</p>
-                    <h3 className="text-lg font-bold group-hover:text-[#E0FF00] transition-colors duration-200">{product.name}</h3>
-                    <p className="text-zinc-400 text-sm font-light mt-1 flex-grow line-clamp-2">{product.description}</p>
-                    <div className="mt-4 pt-4 border-t border-zinc-900 flex items-center justify-between">
-                      <span className="font-mono font-bold text-lg">${product.price}</span>
-                      <button className="text-xs uppercase tracking-widest font-bold bg-zinc-900 px-4 py-2 hover:bg-white hover:text-black transition-colors duration-200">
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-24 border border-dashed border-zinc-800">
-              <p className="text-zinc-500 font-mono uppercase text-sm">No products found in this category.</p>
-            </div>
-          )}
-        </section>
 
-        {/* 4. DEEP SCROLL LOWER CATEGORIES CAROUSEL */}
-        <section className="border-t border-zinc-900 pt-16 mb-16">
-          <div className="mb-8">
-            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">Explore Training Disciplines</h2>
-            <p className="text-zinc-500 text-sm font-light">Gear customized for your specific operational focus.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="relative h-80 group overflow-hidden bg-zinc-900 border border-zinc-800 cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-              <div className="absolute inset-0 scale-100 group-hover:scale-105 transition-transform duration-500 bg-center bg-cover opacity-60" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&auto=format&fit=crop&q=80')` }} />
-              <div className="absolute bottom-6 left-6 z-20">
-                <h3 className="text-xl font-black uppercase tracking-tight text-white mb-1">High-Intensity Training</h3>
-                <span className="text-[#E0FF00] text-xs font-mono tracking-widest uppercase group-hover:underline">Explore Collection &rarr;</span>
-              </div>
-            </div>
-
-            <div className="relative h-80 group overflow-hidden bg-zinc-900 border border-zinc-800 cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-              <div className="absolute inset-0 scale-100 group-hover:scale-105 transition-transform duration-500 bg-center bg-cover opacity-60" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&auto=format&fit=crop&q=80')` }} />
-              <div className="absolute bottom-6 left-6 z-20">
-                <h3 className="text-xl font-black uppercase tracking-tight text-white mb-1">Track & Field</h3>
-                <span className="text-[#E0FF00] text-xs font-mono tracking-widest uppercase group-hover:underline">Explore Collection &rarr;</span>
-              </div>
-            </div>
-
-            <div className="relative h-80 group overflow-hidden bg-zinc-900 border border-zinc-800 cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-              <div className="absolute inset-0 scale-100 group-hover:scale-105 transition-transform duration-500 bg-center bg-cover opacity-60" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=600&auto=format&fit=crop&q=80')` }} />
-              <div className="absolute bottom-6 left-6 z-20">
-                <h3 className="text-xl font-black uppercase tracking-tight text-white mb-1">Combat Sports</h3>
-                <span className="text-[#E0FF00] text-xs font-mono tracking-widest uppercase group-hover:underline">Explore Collection &rarr;</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
+          <select
+            value={sort}
+            onChange={(e) => setParam('sort', e.target.value)}
+            className="bg-neutral-900 border border-neutral-800 text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-3 py-2 focus:outline-none focus:border-neutral-600 cursor-pointer"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
-    </div>
-  );
+
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="aspect-[3/4] bg-neutral-900" />
+              <div className="p-3 space-y-2">
+                <div className="h-2 bg-neutral-900 w-16 rounded" />
+                <div className="h-3 bg-neutral-900 w-full rounded" />
+                <div className="h-3 bg-neutral-900 w-12 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="text-center py-24">
+          <p className="text-neutral-600 text-sm">No products found.</p>
+          <button
+            onClick={() => router.push('/products')}
+            className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white hover:text-neutral-400 transition-colors"
+          >
+            Clear filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
+    </main>
+  )
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense fallback={
+      <main className="max-w-[1600px] mx-auto px-6 md:px-10 py-10 animate-pulse">
+        <div className="h-8 bg-neutral-900 w-48 rounded mb-4" />
+        <div className="h-4 bg-neutral-900 w-24 rounded mb-10" />
+        <div className="h-12 bg-neutral-900 w-full rounded" />
+      </main>
+    }>
+      <CatalogContent />
+    </Suspense>
+  )
 }

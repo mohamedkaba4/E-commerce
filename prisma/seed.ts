@@ -40,7 +40,7 @@ async function main() {
     }),
   ])
 
-  const [men, women, kids, running] = categories
+  const [men, women, kids, running, nutrition] = categories
 
   // Products
   const products = [
@@ -200,6 +200,37 @@ async function main() {
       colors: ['Black', 'White', 'Volt'],
       tags: ['socks', 'running', 'accessories'],
       inventory: 5,
+    },
+    // Nutrition
+    {
+      name: 'Alpha Performance Whey Protein',
+      slug: 'alpha-performance-whey-protein',
+      description: '25g of grass-fed whey isolate per scoop. Rapid absorption, zero fillers, clean chocolate flavor. Ideal for hypertrophy training and explosive recovery.',
+      price: 55,
+      compareAt: 70,
+      categoryId: nutrition.id, // <-- Maps to your nutrition category
+      images: [
+        'https://images.unsplash.com/photo-1579758629938-03607ccdbaba?w=800&q=80',
+        'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=800&q=80',
+      ],
+      sizes: ['2 lbs', '5 lbs'],
+      colors: ['Chocolate', 'Vanilla'],
+      tags: ['protein', 'nutrition', 'bestseller'],
+      featured: true,
+    },
+    {
+      name: 'Pre-Workout Igniter (Volt Flavor)',
+      slug: 'pre-workout-igniter-volt',
+      description: 'High-intensity formula featuring L-Citrulline, Beta-Alanine, and clean caffeine for explosive energy and supreme vascular blood flow.',
+      price: 45,
+      categoryId: nutrition.id, // <-- Maps to your nutrition category
+      images: [
+        'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800&q=80',
+      ],
+      sizes: ['30 Servings'],
+      colors: ['Volt Sour Apple'],
+      tags: ['preworkout', 'nutrition'],
+      featured: true,
     },
   ]
 
