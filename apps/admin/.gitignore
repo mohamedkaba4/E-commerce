@@ -39,25 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-**/generated/prisma
-
-# Local Environment Secrets
-.env.local
-.env
-
-# Ignore dependencies and builds in every app
-node_modules/
-.next/
-out/
-build/
-
-# Dependencies and generated builds
-node_modules/
-.next/
-out/
-build/
-.DS_Store
-.env
-.env.*
-!.env.example
