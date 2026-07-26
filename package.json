@@ -13,8 +13,7 @@
     "build:storefront": "npm run build --workspace=apps/storefront",
     "build:admin": "npm run build --workspace=apps/admin",
 
-    "prisma:generate:storefront": "prisma generate --schema=apps/storefront/prisma/schema.prisma",
-    "prisma:generate:admin": "prisma generate --schema=packages/database/prisma/schema.prisma",
-    "db:generate": "npm run prisma:generate:storefront && npm run prisma:generate:admin"
+    "db:generate": "prisma generate --schema=packages/database/prisma/schema.prisma"
+
   }
 }
