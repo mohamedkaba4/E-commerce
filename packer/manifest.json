@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "name": "mavencrest",
+      "builder_type": "amazon-ebs",
+      "build_time": 1786137462,
+      "files": null,
+      "artifact_id": "us-east-1:ami-045db8f380b303b6b",
+      "packer_run_uuid": "5f37332f-d0a5-4567-a0b9-8c5dda4b1239",
+      "custom_data": null
+    }
+  ],
+  "last_run_uuid": "5f37332f-d0a5-4567-a0b9-8c5dda4b1239"
+}
