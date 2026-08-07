@@ -1,24 +1,77 @@
-name: Deploy App
+name: Build Mavencrest AMI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
-  build:
-    runs-on: self-hosted
+  build-ami:
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          node-version: 20
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
 
-      - run: npm install --include=dev
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
 
-      - run: npx prisma generate --schema=./prisma/schema.prisma
-        env:
-          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+      - name: Initialize Packer
+        run: packer init ./packer
 
-      - run: npm run build
+      - name: Create clean build context
+        run: |
+          rm -rf /tmp/mavencrest-build
+          mkdir -p /tmp/mavencrest-build
+
+          rsync -av \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.turbo' \
+            --exclude '.DS_Store' \
+            --exclude '.env*' \
+            ./ /tmp/mavencrest-build/
+            
+
+      - name: Format check
+        run: packer fmt -check ./packer
+
+      - name: Validate Packer
+        run: |
+          packer validate \
+            -var "source_ami=${{ vars.SOURCE_AMI }}" \
+            -var "subnet_id=${{ vars.BUILD_SUBNET }}" \
+            ./packer
+
+      - name: Build AMI
+        run: |
+          packer build \
+            -var "source_ami=${{ vars.SOURCE_AMI }}" \
+            -var "subnet_id=${{ vars.BUILD_SUBNET }}" \
+            ./packer
+
+      - name: Capture AMI ID
+        id: ami
+        run: |
+          AMI_ID=$(jq -r '.builds[-1].artifact_id' manifest.json | cut -d: -f2)
+          echo "ami_id=$AMI_ID" >> "$GITHUB_OUTPUT"
+          echo "Built AMI: $AMI_ID"
+
+      - name: Publish AMI ID to SSM
+        run: |
+          aws ssm put-parameter \
+            --name "/mavencrest/prod/ami-id" \
+            --value "${{ steps.ami.outputs.ami_id }}" \
+            --type "String" \
+            --overwrite
