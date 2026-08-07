@@ -42,16 +42,16 @@ build {
     ]
   }
   provisioner "file" {
-  source      = "/tmp/mavencrest-build/"
-  destination = "/tmp/mavencrest-src"
- }
+    source      = "/tmp/mavencrest-build/"
+    destination = "/tmp/mavencrest-src"
+  }
 
   provisioner "shell" {
     script = "${path.root}/scripts/build-app.sh"
   }
 
   post-processor "manifest" {
-    output = "manifest.json"
+    output     = "manifest.json"
     strip_path = true
   }
 }
