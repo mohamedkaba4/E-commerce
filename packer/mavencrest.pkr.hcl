@@ -7,10 +7,6 @@ packer {
   }
 }
 
-variable "source_ami" {
-  type = string
-}
-
 variable "subnet_id" {
   type = string
 }
@@ -21,8 +17,18 @@ source "amazon-ebs" "mavencrest" {
   ssh_username         = "ec2-user"
   iam_instance_profile = "nextjs-ec2-profile-prod"
 
-  source_ami = var.source_ami
-  subnet_id  = var.subnet_id
+  subnet_id = var.subnet_id
+
+  source_ami_filter {
+    filters = {
+      name                = "al2023-ami-2023.*-x86_64"
+      virtualization-type = "hvm"
+      root-device-type    = "ebs"
+    }
+
+    owners      = ["137112412989"]
+    most_recent = true
+  }
 
   ami_name = "mavencrest-{{timestamp}}"
 
@@ -41,6 +47,7 @@ build {
       "mkdir -p /tmp/mavencrest-src"
     ]
   }
+
   provisioner "file" {
     source      = "/tmp/mavencrest-build/"
     destination = "/tmp/mavencrest-src"
