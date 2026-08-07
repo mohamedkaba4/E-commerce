@@ -50,12 +50,14 @@ jobs:
       - name: Validate Packer
         run: |
           packer validate \
+            -var "source_ami=${{ vars.SOURCE_AMI }}" \
             -var "subnet_id=${{ vars.BUILD_SUBNET }}" \
             ./packer
 
       - name: Build AMI
         run: |
           packer build \
+            -var "source_ami=${{ vars.SOURCE_AMI }}" \
             -var "subnet_id=${{ vars.BUILD_SUBNET }}" \
             ./packer
 
