@@ -75,3 +75,11 @@ jobs:
             --value "${{ steps.ami.outputs.ami_id }}" \
             --type "String" \
             --overwrite
+            
+      - name: Trigger AWS-Mavencrest deploy workflow
+        env:
+          GH_TOKEN: ${{ secrets.AWS_MAVENCREST_PAT }}
+        run: |
+          gh workflow run deploy.yml \
+            --repo mohamedkaba4/AWS-Mavencrest \
+            --ref main
