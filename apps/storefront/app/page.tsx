@@ -1,14 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+import prisma from '@/lib/prisma'
 import ProductCard from '@/app/components/ProductCard';
-
-const MOCK_PRODUCTS = [
-  { id: '1', name: 'Adidas Continental 80', price: 180, category: 'Men', image: '/adidas80.jpg', description: 'Extreme comfort and timeless design.', slug: 'Adidas Continental 80', sizes: ['8', '9', '10'], colors: ['White', 'Black'] },
-  { id: '2', name: 'Apex Elite Court Shoes', price: 140, category: 'Men', image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80', description: 'Maximum lateral stability for high-intensity court play.', slug: 'apex-elite-court', sizes: ['9', '10', '11'], colors: ['White', 'Blue'] },
-  { id: '3', name: 'Vanguard Training Hoodie', price: 85, category: 'Women', image: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=600&auto=format&fit=crop&q=80', description: 'Thermal regulation fabric engineered for outdoor sessions.', slug: 'vanguard-hoodie', sizes: ['S', 'M', 'L'], colors: ['Gray', 'Black'] },
-  { id: '4', name: 'AeroShell Windbreaker', price: 110, category: 'Running', image: 'https://images.unsplash.com/photo-1548883354-7622d03aca27?w=600&auto=format&fit=crop&q=80', description: 'Ultra-lightweight weather resistance.', slug: 'aeroshell-windbreaker', sizes: ['M', 'L', 'XL'], colors: ['Volt'] },
-  { id: '5', name: 'Pro-Isolate Hydration Matrix', price: 45, category: 'Nutrition', image: 'https://images.unsplash.com/photo-1579758629938-03607ccdbaba?w=600&auto=format&fit=crop&q=80', description: 'Pure whey isolate with optimal amino recovery profile.', slug: 'pro-isolate-hydration', sizes: ['2 lbs'], colors: ['Chocolate'] },
-];
 
 export default async function Home() {
   const categories = [
@@ -18,6 +11,14 @@ export default async function Home() {
     { name: 'Running', slug: 'running', img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&auto=format&fit=crop&q=80' },
     { name: 'Nutrition', slug: 'nutrition', img: '/nutrition.jpg' },
   ];
+  const featuredProducts = await prisma.product.findMany({
+    where: {
+      featured: true,
+    },
+    include: {
+      category: true,
+    },
+  });
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col font-sans">
@@ -60,26 +61,12 @@ export default async function Home() {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {MOCK_PRODUCTS.map((product) => (
-            <ProductCard 
-              key={product.id} 
-              product={{
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                images: [product.image],
-                slug: product.slug,
-                sizes: product.sizes,
-                colors: product.colors,
-                featured: true,
-                category: { 
-                  id: 'mock-id', 
-                  name: product.category, 
-                  slug: product.category.toLowerCase().replace(/\s+/g, '-') 
-                }
-              } as any}
-            />
-          ))}
+        {featuredProducts.map((product) => (
+        <ProductCard
+          key={product.id}
+          product={product}
+        />
+      ))}
         </div>
       </div>
 
