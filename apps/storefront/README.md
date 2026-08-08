@@ -1,36 +1,187 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mavencrest Store
 
-## Getting Started
+A production-grade sporting goods e-commerce platform built with Next.js, Prisma, and PostgreSQL. The application demonstrates modern cloud-native application development, immutable infrastructure, Infrastructure as Code (Terraform), automated CI/CD, and highly available deployments on AWS.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Architecture
+
+### Application Stack
+
+- Next.js 16 (App Router)
+- TypeScript
+- Tailwind CSS
+- Prisma ORM
+- Neon PostgreSQL
+- NextAuth Authentication
+- Docker support
+
+### AWS Infrastructure
+
+- Amazon EC2
+- Auto Scaling Group
+- Application Load Balancer
+- Amazon S3
+- Amazon CloudFront
+- Route 53
+- AWS Systems Manager Parameter Store
+- IAM Roles
+- Amazon Machine Images (AMI)
+
+### Infrastructure as Code
+
+Infrastructure is fully provisioned using Terraform.
+
+The application infrastructure includes:
+
+- VPC networking
+- Security Groups
+- Auto Scaling
+- Launch Templates
+- Load Balancer
+- IAM Roles
+- Route53 DNS
+- S3 buckets
+- CloudFront distribution
+
+---
+
+## CI/CD Pipeline
+
+Application deployments use immutable infrastructure.
+
+```
+Developer Push
+        │
+        ▼
+GitHub Actions
+        │
+        ▼
+Packer builds immutable AMI
+        │
+        ▼
+AMI ID published to AWS Systems Manager Parameter Store
+        │
+        ▼
+Automatically triggers Infrastructure Deployment
+        │
+        ▼
+Terraform updates Launch Template
+        │
+        ▼
+Auto Scaling Instance Refresh
+        │
+        ▼
+New EC2 instances become healthy
+        │
+        ▼
+Old instances terminated
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This approach provides:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Immutable deployments
+- Zero manual AMI updates
+- Automated infrastructure deployment
+- Consistent production environments
+- Reduced deployment risk
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Repository Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+.
+├── apps
+│   ├── storefront
+│   └── admin
+├── packages
+│   └── database
+├── scripts
+├── packer
+└── .github
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Local Development
 
-## Deploy on Vercel
+Install dependencies:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm install
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run the storefront:
+
+```bash
+npm run dev:store
+```
+
+Run the admin portal:
+
+```bash
+npm run dev:admin
+```
+
+---
+
+## Database
+
+Prisma manages all database access.
+
+Generate the Prisma client:
+
+```bash
+npm run db:generate
+```
+
+Seed featured products:
+
+```bash
+npx tsx scripts/seed-featured-products.ts
+```
+
+---
+
+## Security
+
+- IAM Roles (no long-lived AWS credentials)
+- GitHub Actions OIDC authentication
+- Secrets stored in AWS Systems Manager Parameter Store
+- Environment-specific configuration
+- HTTPS through Application Load Balancer
+
+---
+
+## Production Features
+
+- Immutable AMI deployments
+- Auto Scaling
+- Load balancing
+- Automated infrastructure provisioning
+- Infrastructure as Code
+- Automated CI/CD
+- CloudFront CDN
+- Object storage with Amazon S3
+- PostgreSQL database
+- Role-based AWS authentication
+
+---
+
+## Future Enhancements
+
+- Kubernetes deployment
+- Blue/Green deployments
+- Canary releases
+- WAF integration
+- CloudWatch dashboards
+- Centralized logging
+- Automated security scanning
+- Performance testing
+
+---
+
+## License
+
+Portfolio project demonstrating modern AWS cloud architecture, DevOps automation, and production deployment practices.
