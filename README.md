@@ -4,6 +4,8 @@ A full-stack e-commerce platform built with Next.js, TypeScript,
 PostgreSQL, and Prisma, consisting of a customer-facing storefront
 and a dedicated administrative application.
 
+**Live Application:** https://store.mavencrest.site
+
 ## Application Architecture
 
 ![Application Architecture](assets/application-architecture.png)
