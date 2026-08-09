@@ -32,7 +32,7 @@ categories, inventory, and platform content.
 - Monorepo architecture
 
 ## Project Structure
-
+```text
 E-commerce/
 ├── apps/
 │   ├── storefront/
