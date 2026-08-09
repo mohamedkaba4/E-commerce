@@ -44,20 +44,23 @@ E-commerce/
 
 ## Application Architecture
 
-The platform uses a monorepo architecture with two Next.js applications
-sharing a centralized Prisma database layer.
+The platform uses a monorepo architecture with two Next.js applications sharing a centralized Prisma database layer.
 
 ### Production
 
+```text
 Storefront ──┐
              ├── Shared Prisma Layer ── Production PostgreSQL
 Admin ───────┘
+```
 
 ### Development
 
+```text
 Storefront (Dev) ──┐
                    ├── Shared Prisma Layer ── Development PostgreSQL
 Admin (Dev) ───────┘
+```
 
 Production and development use isolated PostgreSQL databases, allowing
 application changes and database migrations to be tested without affecting
