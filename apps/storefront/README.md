@@ -28,6 +28,12 @@ A production-grade sporting goods e-commerce platform built with Next.js, Prisma
 - IAM Roles
 - Amazon Machine Images (AMI)
 
+### Azure Infrastructure
+
+- Azure container app
+- Docker image
+- Azure container registry
+
 ### Infrastructure as Code
 
 Infrastructure is fully provisioned using Terraform.
@@ -45,6 +51,8 @@ The application infrastructure includes:
 - CloudFront distribution
 
 ---
+
+
 
 ## CI/CD Pipeline
 
@@ -88,6 +96,8 @@ This approach provides:
 
 ---
 
+
+
 ## Repository Structure
 
 ```
@@ -103,6 +113,8 @@ This approach provides:
 ```
 
 ---
+
+
 
 ## Local Development
 
@@ -126,6 +138,8 @@ npm run dev:admin
 
 ---
 
+
+
 ## Database
 
 Prisma manages all database access.
@@ -144,6 +158,8 @@ npx tsx scripts/seed-featured-products.ts
 
 ---
 
+
+
 ## Security
 
 - IAM Roles (no long-lived AWS credentials)
@@ -153,6 +169,8 @@ npx tsx scripts/seed-featured-products.ts
 - HTTPS through Application Load Balancer
 
 ---
+
+
 
 ## Production Features
 
@@ -169,6 +187,8 @@ npx tsx scripts/seed-featured-products.ts
 
 ---
 
+
+
 ## Future Enhancements
 
 - Kubernetes deployment
@@ -181,6 +201,8 @@ npx tsx scripts/seed-featured-products.ts
 - Performance testing
 
 ---
+
+
 
 ## License
 
