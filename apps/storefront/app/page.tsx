@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import ProductCard from '@/app/components/ProductCard';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+const pipelineTest: string = 123;
 
 export default async function Home() {
   const categories = [
