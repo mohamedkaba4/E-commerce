@@ -41,7 +41,7 @@ E-commerce/
 │   └── database/
 ├── Dockerfile
 └── package.json
-
+```
 ## Application Architecture
 
 The platform uses a monorepo architecture with two Next.js applications sharing a centralized Prisma database layer.
