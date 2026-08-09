@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mavencrest Admin Portal
 
-## Getting Started
+Administrative application for the Mavencrest E-Commerce Platform.
 
-First, run the development server:
+Built with Next.js, the Admin Portal provides an interface for managing the application's product, categories, inventory, and other e-commerce data.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+The application is maintained in the Mavencrest E-Commerce monorepo and shares the same Prisma database layer used by the storefront application.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Overview
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The Admin Portal provides the management layer for the e-commerce platform while being separate from the public storefront.
 
-## Learn More
+Its primary responsibilities include:
 
-To learn more about Next.js, take a look at the following resources:
+- Product management
+- Category management
+- Inventory and product availability
+- Product images and metadata
+- E-commerce content management
+- Administrative access to application data
+- Shared PostgreSQL data access through Prisma ORM.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture
 
-## Deploy on Vercel
+The Admin Portal is one of two Next.js applications within the Mavencrest monorepo.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+                 Mavencrest E-Commerce
+                         │
+            ┌────────────┴────────────┐
+            │                         │
+     ┌──────▼───────┐          ┌──────▼───────┐
+     │  Storefront  │          │ Admin Portal │
+     │   Next.js    │          │   Next.js    │
+     └──────┬───────┘          └──────┬───────┘
+            │                         │
+            └────────────┬────────────┘
+                         │
+                 ┌───────▼────────┐
+                 │ Shared Prisma  │
+                 │ Database Layer │
+                 └───────┬────────┘
+                         │
+                 ┌───────▼────────┐
+                 │   PostgreSQL   │
+                 └────────────────┘
