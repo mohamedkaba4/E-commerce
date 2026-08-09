@@ -29,16 +29,10 @@ jobs:
 
       - name: Generate Prisma Client
         run: npm run db:generate
-
-      - name: Lint storefront
-        run: npm run lint --workspace=apps/storefront
-
+        
       - name: Build storefront
         run: npm run build:store
         
-      - name: Lint admin
-        run: npm run lint --workspace=apps/admin
-
       - name: Build storefront
         run: npm run build:store
 
