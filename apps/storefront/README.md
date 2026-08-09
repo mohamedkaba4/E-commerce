@@ -33,6 +33,9 @@ A production-grade sporting goods e-commerce platform built with Next.js, Prisma
 - Azure container app
 - Docker image
 - Azure container registry
+- Route 53 DNS
+- Log Analytics Workspace
+- Ingress for ACA
 
 ### Infrastructure as Code
 

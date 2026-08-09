@@ -2,6 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import prisma from '@/lib/prisma'
 import ProductCard from '@/app/components/ProductCard';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Home() {
   const categories = [
