@@ -1,22 +1,22 @@
 # Mavencrest E-Commerce Platform
 
-A full-stack e-commerce platform built with Next.js, TypeScript,
-PostgreSQL, and Prisma, consisting of a customer-facing storefront
-and a dedicated administrative application.
+A full-stack e-commerce platform built with Next.js, TypeScript, PostgreSQL, and Prisma, consisting of a customer-facing storefront and an administrative application to mange the storefront.
 
-**Live Application:** https://store.mavencrest.site
+**Live Application:** [https://store.mavencrest.site](https://store.mavencrest.site)
 
 ## Application Architecture
 
-![Application Architecture](assets/application-architecture.png)
+Application Architecture
 
 ## Applications
 
 ### Storefront
+
 Customer-facing e-commerce application for searching products,
 authentication, product discovery, and shopping functionality.
 
 ### Admin
+
 Dedicated management application for administering products,
 categories, inventory, and platform content.
 
@@ -31,7 +31,10 @@ categories, inventory, and platform content.
 - Docker
 - Monorepo architecture
 
+
+
 ## Project Structure
+
 ```text
 E-commerce/
 ├── apps/
@@ -42,6 +45,9 @@ E-commerce/
 ├── Dockerfile
 └── package.json
 ```
+
+
+
 ## Application Architecture
 
 The platform uses a monorepo architecture with two Next.js applications sharing a centralized Prisma database layer.
@@ -53,6 +59,8 @@ Storefront ──┐
              ├── Shared Prisma Layer ── Production PostgreSQL
 Admin ───────┘
 ```
+
+
 
 ### Development
 
