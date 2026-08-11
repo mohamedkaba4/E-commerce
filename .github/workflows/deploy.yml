@@ -32,9 +32,6 @@ jobs:
         
       - name: Build storefront
         run: npm run build:store
-        
-      - name: Build storefront
-        run: npm run build:store
 
       - name: Build admin
         run: npm run build:admin
