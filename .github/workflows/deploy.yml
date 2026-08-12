@@ -1,47 +1,26 @@
 name: Build Mavencrest AMI
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  test:
-    name: Test App
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --include=optional
-
-      - name: Generate Prisma Client
-        run: npm run db:generate
-        
-      - name: Build storefront
-        run: npm run build:store
-
-      - name: Build admin
-        run: npm run build:admin
-
   build-ami:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout tested commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -68,7 +47,6 @@ jobs:
             --exclude '.DS_Store' \
             --exclude '.env*' \
             ./ /tmp/mavencrest-build/
-            
 
       - name: Format check
         run: packer fmt -check ./packer
@@ -101,7 +79,7 @@ jobs:
             --value "${{ steps.ami.outputs.ami_id }}" \
             --type "String" \
             --overwrite
-            
+
       - name: Trigger AWS-Mavencrest deploy workflow
         env:
           GH_TOKEN: ${{ secrets.AWS_MAVENCREST_PAT }}
