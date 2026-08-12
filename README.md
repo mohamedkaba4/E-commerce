@@ -26,9 +26,9 @@ categories, inventory, and platform content.
 - TypeScript
 - PostgreSQL
 - Prisma ORM
+- Docker
 - NextAuth
 - Google OAuth
-- Docker
 - Monorepo architecture
 
 
