@@ -1,0 +1,42 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureServiceConnection: 'mc-connection'
+  acrName: 'acrmavencrestprodg0rn'
+  acrLoginServer: 'acrmavencrestprodg0rn.azurecr.io'
+  imageName: 'mavencrest-admin'
+  imageTag: 'v1'
+
+stages:
+  - stage: BuildAndPush
+    displayName: Build and Push Admin
+    jobs:
+      - job: BuildAdmin
+        displayName: Build Admin Image
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: Login to ACR
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az acr login --name $(acrName)
+
+          - script: |
+              docker build \
+                --platform linux/amd64 \
+                -f apps/admin/Dockerfile \
+                -t $(acrLoginServer)/$(imageName):$(imageTag) \
+                .
+            displayName: Build Admin Docker Image
+
+          - script: |
+              docker push $(acrLoginServer)/$(imageName):$(imageTag)
+            displayName: Push Admin Image to ACR
+            
