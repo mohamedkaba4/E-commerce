@@ -36,6 +36,7 @@ stages:
     - script: |
         docker build \
           --platform linux/amd64 \
+          -f apps/storefront/Dockerfile \
           -t $(acrLoginServer)/$(imageName):$(imageTag) \
           .
       displayName: Build Docker Image
