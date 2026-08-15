@@ -15,7 +15,7 @@ Application Architecture
 Customer-facing e-commerce application for searching products,
 authentication, product discovery, and shopping functionality.
 
-### Admin
+### Admin Management Site
 
 Dedicated management application for administering products,
 categories, inventory, and platform content.
@@ -26,9 +26,9 @@ categories, inventory, and platform content.
 - TypeScript
 - PostgreSQL
 - Prisma ORM
+- Docker
 - NextAuth
 - Google OAuth
-- Docker
 - Monorepo architecture
 
 

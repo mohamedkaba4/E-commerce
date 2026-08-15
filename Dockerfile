@@ -22,7 +22,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run db:generate
-RUN npm run build:storefront
+RUN npm run build:store
 
 
 FROM node:22-alpine AS runner
