@@ -29,8 +29,28 @@ stages:
                 az acr login --name $(acrName)
 
           - script: |
+              echo "Commit:"
+              git rev-parse HEAD
+
+              echo "Current directory:"
+              pwd
+
+              echo "Dockerfile:"
+              cat apps/admin/Dockerfile
+
+              echo "Next config:"
+              cat apps/admin/next.config.*
+
+              echo "Files:"
+              ls -la
+              ls -la apps/admin
+            displayName: Verify Build Source
+            
+          - script: |
               docker build \
                 --platform linux/amd64 \
+                --no-cache \
+                --progress=plain \
                 -f apps/admin/Dockerfile \
                 -t $(acrLoginServer)/$(imageName):$(imageTag) \
                 .
