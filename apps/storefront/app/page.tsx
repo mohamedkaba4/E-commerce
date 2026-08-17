@@ -11,8 +11,8 @@ export default async function Home() {
     { name: 'Men', slug: 'men', img: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=600&auto=format&fit=crop&q=80' },
     { name: 'Women', slug: 'women', img: '/wsoccer.jpg' },
     { name: 'Kids', slug: 'kids', img: '/madrid.jpeg' },
-    { name: 'Running', slug: 'running', img: 'https://d1jpqk4gnxzbj2.cloudfront.net/trackpic.jpeg' },
-    { name: 'Nutrition', slug: 'nutrition', img: '/nutrition.jpg' },
+    { name: 'Running', slug: 'running', img: 'https://d1jpqk4gnxzbj2.cloudfront.net/trackpic.png' },
+    { name: 'Nutrition', slug: 'nutrition', img: 'https://d1jpqk4gnxzbj2.cloudfront.net/nutrition.png' },
   ];
   const featuredProducts = await prisma.product.findMany({
     where: {
