@@ -10,17 +10,55 @@ variables:
   azureServiceConnection: 'mc-connection'
   acrName: 'acrmavencrestprodg0rn'
   acrLoginServer: 'acrmavencrestprodg0rn.azurecr.io'
-  imageName: 'mavencrest-storefront'
   resourceGroup: 'rg-mavencrest-prod'
-  containerAppName: 'ca-mavencrest-prod-storefront'
+
+  storefrontImageName: 'mavencrest-storefront'
+  storefrontContainerApp: 'ca-mavencrest-prod-storefront'
+
+  adminImageName: 'mavencrest-admin'
+  adminContainerApp: 'ca-mavencrest-prod-admin'
+
   imageTag: '$(Build.BuildId)'
 
 stages:
-- stage: Build
-  displayName: Build and Push
+
+- stage: Test
+  displayName: Test Application
 
   jobs:
-  - job: BuildImage
+  - job: TestApplication
+    displayName: Test and Validate
+
+    steps:
+    - checkout: self
+
+    - task: NodeTool@0
+      displayName: Use Node.js 22
+      inputs:
+        versionSpec: '22.x'
+
+    - script: npm ci
+      displayName: Install Dependencies
+
+    - script: npm run db:generate
+      displayName: Generate Prisma Client
+
+    - script: npm run build:store
+      displayName: Build Storefront
+
+    - script: npm run build:admin
+      displayName: Build Admin
+
+
+- stage: Build
+  displayName: Build and Push
+  dependsOn: Test
+  condition: succeeded()
+
+  jobs:
+  - job: BuildImages
+    displayName: Build Container Images
+
     steps:
     - checkout: self
 
@@ -37,29 +75,59 @@ stages:
         docker build \
           --platform linux/amd64 \
           -f apps/storefront/Dockerfile \
-          -t $(acrLoginServer)/$(imageName):$(imageTag) \
+          -t $(acrLoginServer)/$(storefrontImageName):$(imageTag) \
           .
-      displayName: Build Docker Image
+      displayName: Build Storefront Docker Image
 
     - script: |
-        docker push $(acrLoginServer)/$(imageName):$(imageTag)
-      displayName: Push Image to ACR
+        docker push \
+          $(acrLoginServer)/$(storefrontImageName):$(imageTag)
+      displayName: Push Storefront Image to ACR
+
+    - script: |
+        docker build \
+          --platform linux/amd64 \
+          -f apps/admin/Dockerfile \
+          -t $(acrLoginServer)/$(adminImageName):$(imageTag) \
+          .
+      displayName: Build Admin Docker Image
+
+    - script: |
+        docker push \
+          $(acrLoginServer)/$(adminImageName):$(imageTag)
+      displayName: Push Admin Image to ACR
+
 
 - stage: DeployProd
   displayName: Deploy Production
   dependsOn: Build
+  condition: succeeded()
 
   jobs:
   - job: Deploy
+    displayName: Deploy Container Apps
+
     steps:
     - task: AzureCLI@2
-      displayName: Deploy to Container App
+      displayName: Deploy Storefront
       inputs:
         azureSubscription: '$(azureServiceConnection)'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
           az containerapp update \
-            --name $(containerAppName) \
+            --name $(storefrontContainerApp) \
             --resource-group $(resourceGroup) \
-            --image $(acrLoginServer)/$(imageName):$(imageTag)
+            --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
+
+    - task: AzureCLI@2
+      displayName: Deploy Admin
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az containerapp update \
+            --name $(adminContainerApp) \
+            --resource-group $(resourceGroup) \
+            --image $(acrLoginServer)/$(adminImageName):$(imageTag)
