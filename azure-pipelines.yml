@@ -14,9 +14,11 @@ variables:
 
   storefrontImageName: 'mavencrest-storefront'
   storefrontContainerApp: 'ca-mavencrest-prod-storefront'
+  storefrontStagingContainerApp: 'ca-mavencrest-staging-storefront'
 
   adminImageName: 'mavencrest-admin'
   adminContainerApp: 'ca-mavencrest-prod-admin'
+  adminStagingContainerApp: 'ca-mavencrest-staging-admin'
 
   imageTag: '$(Build.BuildId)'
 
@@ -97,7 +99,46 @@ stages:
           $(acrLoginServer)/$(adminImageName):$(imageTag)
       displayName: Push Admin Image to ACR
 
+- stage: DeployStaging
+  displayName: Deploy Staging
+  dependsOn: Build
+  condition: succeeded()
 
+  jobs:
+  - deployment: DeployStaging
+    displayName: Deploy Container Apps to Staging
+    environment: Staging
+
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - task: AzureCLI@2
+            displayName: Deploy Storefront to Staging
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az containerapp update \
+                  --name $(storefrontStagingContainerApp) \
+                  --resource-group $(resourceGroup) \
+                  --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
+
+          - task: AzureCLI@2
+            displayName: Deploy Admin to Staging
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az containerapp update \
+                  --name $(adminStagingContainerApp) \
+                  --resource-group $(resourceGroup) \
+                  --image $(acrLoginServer)/$(adminImageName):$(imageTag)
+
+                  
 - stage: DeployProd
   displayName: Deploy Production
   dependsOn: Build
