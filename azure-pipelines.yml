@@ -104,30 +104,35 @@ stages:
   condition: succeeded()
 
   jobs:
-  - job: Deploy
+  - deployment: Deploy
     displayName: Deploy Container Apps
+    environment: Prod
 
-    steps:
-    - task: AzureCLI@2
-      displayName: Deploy Storefront
-      inputs:
-        azureSubscription: '$(azureServiceConnection)'
-        scriptType: bash
-        scriptLocation: inlineScript
-        inlineScript: |
-          az containerapp update \
-            --name $(storefrontContainerApp) \
-            --resource-group $(resourceGroup) \
-            --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
 
-    - task: AzureCLI@2
-      displayName: Deploy Admin
-      inputs:
-        azureSubscription: '$(azureServiceConnection)'
-        scriptType: bash
-        scriptLocation: inlineScript
-        inlineScript: |
-          az containerapp update \
-            --name $(adminContainerApp) \
-            --resource-group $(resourceGroup) \
-            --image $(acrLoginServer)/$(adminImageName):$(imageTag)
+          - task: AzureCLI@2
+            displayName: Deploy Storefront
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az containerapp update \
+                  --name $(storefrontContainerApp) \
+                  --resource-group $(resourceGroup) \
+                  --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
+
+          - task: AzureCLI@2
+            displayName: Deploy Admin
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az containerapp update \
+                  --name $(adminContainerApp) \
+                  --resource-group $(resourceGroup) \
+                  --image $(acrLoginServer)/$(adminImageName):$(imageTag)
