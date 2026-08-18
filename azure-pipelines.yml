@@ -138,10 +138,53 @@ stages:
                   --resource-group $(resourceGroup) \
                   --image $(acrLoginServer)/$(adminImageName):$(imageTag)
 
-                  
+- stage: SmokeTestStaging
+  displayName: Smoke Test Staging
+  dependsOn: DeployStaging
+  condition: succeeded()
+
+  jobs:
+  - job: SmokeTest
+    displayName: Validate Staging
+
+    steps:
+    - task: AzureCLI@2
+      displayName: Smoke Test Staging Apps
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          STOREFRONT_URL=$(az containerapp show \
+            --name $(storefrontStagingContainerApp) \
+            --resource-group $(resourceGroup) \
+            --query properties.configuration.ingress.fqdn \
+            -o tsv)
+
+          ADMIN_URL=$(az containerapp show \
+            --name $(adminStagingContainerApp) \
+            --resource-group $(resourceGroup) \
+            --query properties.configuration.ingress.fqdn \
+            -o tsv)
+
+          echo "Testing Storefront staging..."
+          curl --fail --silent --show-error \
+            --retry 5 \
+            --retry-delay 5 \
+            "https://$STOREFRONT_URL"
+
+          echo "Testing Admin staging..."
+          curl --fail --silent --show-error \
+            --retry 5 \
+            --retry-delay 5 \
+            "https://$ADMIN_URL"
+
+          echo "Staging smoke tests passed."
+
+          
 - stage: DeployProd
   displayName: Deploy Production
-  dependsOn: DeployStaging
+  dependsOn: SmokeTestStaging
   condition: succeeded()
 
   jobs:
