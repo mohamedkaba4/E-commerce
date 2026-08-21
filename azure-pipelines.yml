@@ -125,7 +125,7 @@ stages:
               inlineScript: |
                 az containerapp update \
                   --name $(storefrontStagingContainerApp) \
-                  --resource-group $(stagingResourceGroup) \
+                  --resource-group $(rg-mavencrest-staging) \
                   --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
 
           - task: AzureCLI@2
@@ -137,7 +137,7 @@ stages:
               inlineScript: |
                 az containerapp update \
                   --name $(adminStagingContainerApp) \
-                  --resource-group $(stagingResourceGroup) \
+                  --resource-group $(rg-mavencrest-staging) \
                   --image $(acrLoginServer)/$(adminImageName):$(imageTag)
 
 - stage: SmokeTestStaging
@@ -159,13 +159,13 @@ stages:
         inlineScript: |
           STOREFRONT_URL=$(az containerapp show \
             --name $(storefrontStagingContainerApp) \
-            --resource-group $(resourceGroup) \
+            --resource-group $(rg-mavencrest-staging) \
             --query properties.configuration.ingress.fqdn \
             -o tsv)
 
           ADMIN_URL=$(az containerapp show \
             --name $(adminStagingContainerApp) \
-            --resource-group $(resourceGroup) \
+            --resource-group $(rg-mavencrest-staging) \
             --query properties.configuration.ingress.fqdn \
             -o tsv)
 
