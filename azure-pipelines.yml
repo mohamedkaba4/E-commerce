@@ -10,7 +10,9 @@ variables:
   azureServiceConnection: 'mc-connection'
   acrName: 'acrmavencrestprodg0rn'
   acrLoginServer: 'acrmavencrestprodg0rn.azurecr.io'
-  resourceGroup: 'rg-mavencrest-prod'
+  
+  stagingResourceGroup: 'rg-mavencrest-staging'
+  prodResourceGroup: 'rg-mavencrest-prod'
 
   storefrontImageName: 'mavencrest-storefront'
   storefrontContainerApp: 'ca-mavencrest-prod-storefront'
@@ -123,7 +125,7 @@ stages:
               inlineScript: |
                 az containerapp update \
                   --name $(storefrontStagingContainerApp) \
-                  --resource-group $(resourceGroup) \
+                  --resource-group $(stagingResourceGroup) \
                   --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
 
           - task: AzureCLI@2
@@ -135,7 +137,7 @@ stages:
               inlineScript: |
                 az containerapp update \
                   --name $(adminStagingContainerApp) \
-                  --resource-group $(resourceGroup) \
+                  --resource-group $(stagingResourceGroup) \
                   --image $(acrLoginServer)/$(adminImageName):$(imageTag)
 
 - stage: SmokeTestStaging
@@ -206,7 +208,7 @@ stages:
               inlineScript: |
                 az containerapp update \
                   --name $(storefrontContainerApp) \
-                  --resource-group $(resourceGroup) \
+                  --resource-group $(prodResourceGroup) \
                   --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
 
           - task: AzureCLI@2
@@ -218,5 +220,5 @@ stages:
               inlineScript: |
                 az containerapp update \
                   --name $(adminContainerApp) \
-                  --resource-group $(resourceGroup) \
+                  --resource-group $(prodResourceGroup) \
                   --image $(acrLoginServer)/$(adminImageName):$(imageTag)
