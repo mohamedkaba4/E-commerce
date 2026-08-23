@@ -71,7 +71,7 @@ stages:
     - task: AzureCLI@2
       displayName: Login to ACR
       inputs:
-        azureSubscription: '$(stagingConnection)'
+        azureSubscription: '$(prodConnection)'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
