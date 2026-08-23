@@ -7,7 +7,9 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  azureServiceConnection: 'mc-connection'
+  stagingConnection: 'sc-mcrest-staging'
+  prodConnection: 'sc-mcrest-prod'
+
   acrName: 'acrmavencrestprodzcjo'
   acrLoginServer: 'acrmavencrestprodzcjo.azurecr.io'
   
@@ -69,7 +71,7 @@ stages:
     - task: AzureCLI@2
       displayName: Login to ACR
       inputs:
-        azureSubscription: '$(azureServiceConnection)'
+        azureSubscription: '$(stagingConnection)'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
@@ -119,7 +121,7 @@ stages:
           - task: AzureCLI@2
             displayName: Deploy Storefront to Staging
             inputs:
-              azureSubscription: '$(azureServiceConnection)'
+              azureSubscription: '$(stagingConnection)'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
@@ -131,7 +133,7 @@ stages:
           - task: AzureCLI@2
             displayName: Deploy Admin to Staging
             inputs:
-              azureSubscription: '$(azureServiceConnection)'
+              azureSubscription: '$(stagingConnection)'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
@@ -153,7 +155,7 @@ stages:
     - task: AzureCLI@2
       displayName: Smoke Test Staging Apps
       inputs:
-        azureSubscription: '$(azureServiceConnection)'
+        azureSubscription: '$(stagingConnection)'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
@@ -202,7 +204,7 @@ stages:
           - task: AzureCLI@2
             displayName: Deploy Storefront
             inputs:
-              azureSubscription: '$(azureServiceConnection)'
+              azureSubscription: '$(prodConnection)'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
@@ -214,7 +216,7 @@ stages:
           - task: AzureCLI@2
             displayName: Deploy Admin
             inputs:
-              azureSubscription: '$(azureServiceConnection)'
+              azureSubscription: '$(prodConnection)'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
