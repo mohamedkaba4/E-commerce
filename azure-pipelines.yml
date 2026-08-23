@@ -8,8 +8,8 @@ pool:
 
 variables:
   azureServiceConnection: 'mc-connection'
-  acrName: 'acrmavencrestprodg0rn'
-  acrLoginServer: 'acrmavencrestprodg0rn.azurecr.io'
+  acrName: 'acrmavencrestprodzcjo'
+  acrLoginServer: 'acrmavencrestprodzcjo.azurecr.io'
   
   stagingResourceGroup: 'rg-mavencrest-staging'
   prodResourceGroup: 'rg-mavencrest-prod'
