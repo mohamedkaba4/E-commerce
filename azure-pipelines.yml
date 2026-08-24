@@ -82,7 +82,13 @@ stages:
         inlineScript: |
           az acr login --name $(acrName)
 
-    # STOREFRONT BUILD WITH CACHE
+    # INSTALL TRIVY SCANNER
+    - script: |
+        echo "Installing Trivy Vulnerability Scanner..."
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      displayName: Install Trivy
+
+    # STOREFRONT: BUILD -> SCAN -> PUSH
     - script: |
         docker pull $(acrLoginServer)/$(storefrontImageName):latest || true
         docker build \
@@ -95,11 +101,15 @@ stages:
       displayName: Build Storefront Docker Image (Cached)
 
     - script: |
+        trivy image --severity HIGH,CRITICAL --exit-code 1 $(acrLoginServer)/$(storefrontImageName):$(imageTag)
+      displayName: Scan Storefront Image with Trivy
+
+    - script: |
         docker push $(acrLoginServer)/$(storefrontImageName):$(imageTag)
         docker push $(acrLoginServer)/$(storefrontImageName):latest
       displayName: Push Storefront Image & Cache Tag to ACR
 
-    # ADMIN BUILD WITH CACHE
+    # ADMIN: BUILD -> SCAN -> PUSH
     - script: |
         docker pull $(acrLoginServer)/$(adminImageName):latest || true
         docker build \
@@ -112,6 +122,10 @@ stages:
       displayName: Build Admin Docker Image (Cached)
 
     - script: |
+        trivy image --severity HIGH,CRITICAL --exit-code 1 $(acrLoginServer)/$(adminImageName):$(imageTag)
+      displayName: Scan Admin Image with Trivy
+
+    - script: |
         docker push $(acrLoginServer)/$(adminImageName):$(imageTag)
         docker push $(acrLoginServer)/$(adminImageName):latest
       displayName: Push Admin Image & Cache Tag to ACR
@@ -120,7 +134,6 @@ stages:
 - stage: DeployStaging
   displayName: Deploy Staging
   dependsOn: Build
-  # Only deploy to Staging on direct merges/pushes to main, not PR builds
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
   jobs:
@@ -205,7 +218,6 @@ stages:
 - stage: DeployProd
   displayName: Deploy Production
   dependsOn: SmokeTestStaging
-  # Only prompt for Prod approval on main branch
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
   jobs:
@@ -219,7 +231,7 @@ stages:
           steps:
 
           - task: AzureCLI@2
-            displayName: Deploy Storefront
+            displayName: Deploy Storefront to Production
             inputs:
               azureSubscription: '$(prodConnection)'
               scriptType: bash
@@ -231,7 +243,7 @@ stages:
                   --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
 
           - task: AzureCLI@2
-            displayName: Deploy Admin
+            displayName: Deploy Admin to Production
             inputs:
               azureSubscription: '$(prodConnection)'
               scriptType: bash
@@ -241,3 +253,37 @@ stages:
                   --name $(adminContainerApp) \
                   --resource-group $(prodResourceGroup) \
                   --image $(acrLoginServer)/$(adminImageName):$(imageTag)
+
+          # HEALTH CHECK & AUTOMATED ROLLBACK
+          - task: AzureCLI@2
+            displayName: Production Health Check & Rollback
+            inputs:
+              azureSubscription: '$(prodConnection)'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                echo "Validating Production endpoints..."
+
+                STORE_STATUS=$(curl --write-out "%{http_code}" --silent --output /dev/null --retry 3 --retry-delay 5 "https://store.az.mavencrest.site")
+                ADMIN_STATUS=$(curl --write-out "%{http_code}" --silent --output /dev/null --retry 3 --retry-delay 5 "https://admin.az.mavencrest.site")
+
+                if [ "$STORE_STATUS" -ne 200 ] || [ "$ADMIN_STATUS" -ne 200 ]; then
+                  echo "CRITICAL: Health check failed (Storefront HTTP: $STORE_STATUS, Admin HTTP: $ADMIN_STATUS)."
+                  echo "Initiating automated rollback to previous active revisions..."
+
+                  PREV_STORE_REV=$(az containerapp revision list --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`false\`] | [-1].name" -o tsv)
+                  if [ -n "$PREV_STORE_REV" ]; then
+                    echo "Reverting Storefront to revision: $PREV_STORE_REV"
+                    az containerapp revision activate --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --revision $PREV_STORE_REV
+                  fi
+
+                  PREV_ADMIN_REV=$(az containerapp revision list --name $(adminContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`false\`] | [-1].name" -o tsv)
+                  if [ -n "$PREV_ADMIN_REV" ]; then
+                    echo "Reverting Admin to revision: $PREV_ADMIN_REV"
+                    az containerapp revision activate --name $(adminContainerApp) --resource-group $(prodResourceGroup) --revision $PREV_ADMIN_REV
+                  fi
+
+                  exit 1
+                fi
+
+                echo "Production health check passed successfully."
