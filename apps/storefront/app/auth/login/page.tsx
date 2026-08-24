@@ -1,6 +1,10 @@
 'use client'
-import { signIn } from 'next-auth/react'0
+import { signIn } from 'next-auth/react'
 
+export default function HomePage() {
+  // Valid TypeScript (passes build), but crashes when rendered on server!
+  throw new Error("Simulated Production Outage for Rollback Test");
+}
 export default function LoginPage() {
   return (
     <main className="max-w-[1200px] mx-auto px-6 py-32">
