@@ -1,11 +1,9 @@
 'use client'
 import { signIn } from 'next-auth/react'
 
-export default function HomePage() {
-  // Valid TypeScript (passes build), but crashes when rendered on server!
-  throw new Error("Simulated Production Outage for Rollback Test");
-}
 export default function LoginPage() {
+
+  throw new Error("Simulated Production Outage for Rollback Test");
   return (
     <main className="max-w-[1200px] mx-auto px-6 py-32">
       <a href="/checkout" className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 hover:text-white transition-colors mb-8 block">
