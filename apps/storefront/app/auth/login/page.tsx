@@ -1,5 +1,5 @@
 'use client'
-import { signIn } from 'next-auth/react'
+import { signIn } from 'next-auth/react'0
 
 export default function LoginPage() {
   return (
