@@ -264,23 +264,33 @@ stages:
               inlineScript: |
                 echo "Validating Production endpoints..."
 
-                STORE_STATUS=$(curl --write-out "%{http_code}" --silent --output /dev/null --retry 3 --retry-delay 5 "https://store.az.mavencrest.site")
-                ADMIN_STATUS=$(curl --write-out "%{http_code}" --silent --output /dev/null --retry 3 --retry-delay 5 "https://admin.az.mavencrest.site")
+                STORE_STATUS=$(curl -L --write-out "%{http_code}" --silent --output /dev/null --retry 3 --retry-delay 5 "https://store.az.mavencrest.site/api/health")
+                ADMIN_STATUS=$(curl -L --write-out "%{http_code}" --silent --output /dev/null --retry 3 --retry-delay 5 "https://admin.az.mavencrest.site/api/health")
 
                 if [ "$STORE_STATUS" -ne 200 ] || [ "$ADMIN_STATUS" -ne 200 ]; then
                   echo "CRITICAL: Health check failed (Storefront HTTP: $STORE_STATUS, Admin HTTP: $ADMIN_STATUS)."
-                  echo "Initiating automated rollback to previous active revisions..."
+                  echo "Initiating automated rollback..."
 
+                  # --- STOREFRONT ROLLBACK ---
+                  BROKEN_STORE_REV=$(az containerapp revision list --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`true\`] | [-1].name" -o tsv)
                   PREV_STORE_REV=$(az containerapp revision list --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`false\`] | [-1].name" -o tsv)
+
                   if [ -n "$PREV_STORE_REV" ]; then
-                    echo "Reverting Storefront to revision: $PREV_STORE_REV"
+                    echo "Reverting Storefront traffic to revision: $PREV_STORE_REV"
                     az containerapp revision activate --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --revision $PREV_STORE_REV
+                    az containerapp ingress traffic set --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --revision-weight $PREV_STORE_REV=100
+                    az containerapp revision deactivate --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --revision $BROKEN_STORE_REV
                   fi
 
+                  # --- ADMIN ROLLBACK ---
+                  BROKEN_ADMIN_REV=$(az containerapp revision list --name $(adminContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`true\`] | [-1].name" -o tsv)
                   PREV_ADMIN_REV=$(az containerapp revision list --name $(adminContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`false\`] | [-1].name" -o tsv)
+
                   if [ -n "$PREV_ADMIN_REV" ]; then
-                    echo "Reverting Admin to revision: $PREV_ADMIN_REV"
+                    echo "Reverting Admin traffic to revision: $PREV_ADMIN_REV"
                     az containerapp revision activate --name $(adminContainerApp) --resource-group $(prodResourceGroup) --revision $PREV_ADMIN_REV
+                    az containerapp ingress traffic set --name $(adminContainerApp) --resource-group $(prodResourceGroup) --revision-weight $PREV_ADMIN_REV=100
+                    az containerapp revision deactivate --name $(adminContainerApp) --resource-group $(prodResourceGroup) --revision $BROKEN_ADMIN_REV
                   fi
 
                   exit 1
