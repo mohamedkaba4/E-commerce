@@ -243,57 +243,59 @@ stages:
                   --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
 
           - task: AzureCLI@2
-            displayName: Deploy Admin to Production
+            displayName: Deploy & Health Check with Auto-Rollback
             inputs:
               azureSubscription: '$(prodConnection)'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
+                # 1. CAPTURE LAST KNOWN GOOD REVISIONS BEFORE DEPLOYING
+                echo "Recording active production revisions..."
+                STORE_GOOD_REV=$(az containerapp revision list --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`true\`].name | [0]" -o tsv)
+                ADMIN_GOOD_REV=$(az containerapp revision list --name $(adminContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`true\`].name | [0]" -o tsv)
+
+                echo "Storefront baseline revision: $STORE_GOOD_REV"
+                echo "Admin baseline revision: $ADMIN_GOOD_REV"
+
+                # 2. DEPLOY NEW IMAGES
+                echo "Deploying new container versions..."
+                az containerapp update \
+                  --name $(storefrontContainerApp) \
+                  --resource-group $(prodResourceGroup) \
+                  --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
+
                 az containerapp update \
                   --name $(adminContainerApp) \
                   --resource-group $(prodResourceGroup) \
                   --image $(acrLoginServer)/$(adminImageName):$(imageTag)
 
-          # HEALTH CHECK & AUTOMATED ROLLBACK
-          - task: AzureCLI@2
-            displayName: Production Health Check & Rollback
-            inputs:
-              azureSubscription: '$(prodConnection)'
-              scriptType: bash
-              scriptLocation: inlineScript
-              inlineScript: |
-                echo "Validating Production endpoints..."
+                # CAPTURE NEWLY DEPLOYED REVISIONS
+                STORE_NEW_REV=$(az containerapp revision list --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`true\`].name | [0]" -o tsv)
+                ADMIN_NEW_REV=$(az containerapp revision list --name $(adminContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`true\`].name | [0]" -o tsv)
 
+                # 3. RUN HEALTH CHECKS
+                echo "Validating Production endpoints..."
                 STORE_STATUS=$(curl -L --write-out "%{http_code}" --silent --output /dev/null --retry 3 --retry-delay 5 "https://store.az.mavencrest.site/api/health")
                 ADMIN_STATUS=$(curl -L --write-out "%{http_code}" --silent --output /dev/null --retry 3 --retry-delay 5 "https://admin.az.mavencrest.site/api/health")
 
+                # 4. IF FAILED, AUTOMATICALLY SHIFT TRAFFIC BACK & DEACTIVATE BROKEN REVISION
                 if [ "$STORE_STATUS" -ne 200 ] || [ "$ADMIN_STATUS" -ne 200 ]; then
-                  echo "CRITICAL: Health check failed (Storefront HTTP: $STORE_STATUS, Admin HTTP: $ADMIN_STATUS)."
-                  echo "Initiating automated rollback..."
+                  echo "CRITICAL: Health check failed (Storefront: $STORE_STATUS, Admin: $ADMIN_STATUS)."
+                  echo "Executing automatic rollback to baseline revisions..."
 
-                  # --- STOREFRONT ROLLBACK ---
-                  BROKEN_STORE_REV=$(az containerapp revision list --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`true\`] | [-1].name" -o tsv)
-                  PREV_STORE_REV=$(az containerapp revision list --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`false\`] | [-1].name" -o tsv)
-
-                  if [ -n "$PREV_STORE_REV" ]; then
-                    echo "Reverting Storefront traffic to revision: $PREV_STORE_REV"
-                    az containerapp revision activate --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --revision $PREV_STORE_REV
-                    az containerapp ingress traffic set --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --revision-weight $PREV_STORE_REV=100
-                    az containerapp revision deactivate --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --revision $BROKEN_STORE_REV
+                  if [ -n "$STORE_GOOD_REV" ]; then
+                    echo "Reverting Storefront to $STORE_GOOD_REV..."
+                    az containerapp ingress traffic set --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --revision-weight $STORE_GOOD_REV=100
+                    az containerapp revision deactivate --name $(storefrontContainerApp) --resource-group $(prodResourceGroup) --revision $STORE_NEW_REV
                   fi
 
-                  # --- ADMIN ROLLBACK ---
-                  BROKEN_ADMIN_REV=$(az containerapp revision list --name $(adminContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`true\`] | [-1].name" -o tsv)
-                  PREV_ADMIN_REV=$(az containerapp revision list --name $(adminContainerApp) --resource-group $(prodResourceGroup) --query "[?properties.active==\`false\`] | [-1].name" -o tsv)
-
-                  if [ -n "$PREV_ADMIN_REV" ]; then
-                    echo "Reverting Admin traffic to revision: $PREV_ADMIN_REV"
-                    az containerapp revision activate --name $(adminContainerApp) --resource-group $(prodResourceGroup) --revision $PREV_ADMIN_REV
-                    az containerapp ingress traffic set --name $(adminContainerApp) --resource-group $(prodResourceGroup) --revision-weight $PREV_ADMIN_REV=100
-                    az containerapp revision deactivate --name $(adminContainerApp) --resource-group $(prodResourceGroup) --revision $BROKEN_ADMIN_REV
+                  if [ -n "$ADMIN_GOOD_REV" ]; then
+                    echo "Reverting Admin to $ADMIN_GOOD_REV..."
+                    az containerapp ingress traffic set --name $(adminContainerApp) --resource-group $(prodResourceGroup) --revision-weight $ADMIN_GOOD_REV=100
+                    az containerapp revision deactivate --name $(adminContainerApp) --resource-group $(prodResourceGroup) --revision $ADMIN_NEW_REV
                   fi
 
                   exit 1
                 fi
 
-                echo "Production health check passed successfully."
+                echo "Production health checks passed successfully."
