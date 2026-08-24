@@ -3,6 +3,11 @@ trigger:
     include:
       - main
 
+pr:
+  branches:
+    include:
+      - main
+
 pool:
   vmImage: ubuntu-latest
 
@@ -77,36 +82,46 @@ stages:
         inlineScript: |
           az acr login --name $(acrName)
 
+    # STOREFRONT BUILD WITH CACHE
     - script: |
+        docker pull $(acrLoginServer)/$(storefrontImageName):latest || true
         docker build \
           --platform linux/amd64 \
+          --cache-from $(acrLoginServer)/$(storefrontImageName):latest \
           -f apps/storefront/Dockerfile \
           -t $(acrLoginServer)/$(storefrontImageName):$(imageTag) \
+          -t $(acrLoginServer)/$(storefrontImageName):latest \
           .
-      displayName: Build Storefront Docker Image
+      displayName: Build Storefront Docker Image (Cached)
 
     - script: |
-        docker push \
-          $(acrLoginServer)/$(storefrontImageName):$(imageTag)
-      displayName: Push Storefront Image to ACR
+        docker push $(acrLoginServer)/$(storefrontImageName):$(imageTag)
+        docker push $(acrLoginServer)/$(storefrontImageName):latest
+      displayName: Push Storefront Image & Cache Tag to ACR
 
+    # ADMIN BUILD WITH CACHE
     - script: |
+        docker pull $(acrLoginServer)/$(adminImageName):latest || true
         docker build \
           --platform linux/amd64 \
+          --cache-from $(acrLoginServer)/$(adminImageName):latest \
           -f apps/admin/Dockerfile \
           -t $(acrLoginServer)/$(adminImageName):$(imageTag) \
+          -t $(acrLoginServer)/$(adminImageName):latest \
           .
-      displayName: Build Admin Docker Image
+      displayName: Build Admin Docker Image (Cached)
 
     - script: |
-        docker push \
-          $(acrLoginServer)/$(adminImageName):$(imageTag)
-      displayName: Push Admin Image to ACR
+        docker push $(acrLoginServer)/$(adminImageName):$(imageTag)
+        docker push $(acrLoginServer)/$(adminImageName):latest
+      displayName: Push Admin Image & Cache Tag to ACR
+
 
 - stage: DeployStaging
   displayName: Deploy Staging
   dependsOn: Build
-  condition: succeeded()
+  # Only deploy to Staging on direct merges/pushes to main, not PR builds
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
   jobs:
   - deployment: DeployStaging
@@ -142,10 +157,11 @@ stages:
                   --resource-group $(stagingResourceGroup) \
                   --image $(acrLoginServer)/$(adminImageName):$(imageTag)
 
+
 - stage: SmokeTestStaging
   displayName: Smoke Test Staging
   dependsOn: DeployStaging
-  condition: succeeded()
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
   jobs:
   - job: SmokeTest
@@ -189,7 +205,8 @@ stages:
 - stage: DeployProd
   displayName: Deploy Production
   dependsOn: SmokeTestStaging
-  condition: succeeded()
+  # Only prompt for Prod approval on main branch
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
   jobs:
   - deployment: Deploy
