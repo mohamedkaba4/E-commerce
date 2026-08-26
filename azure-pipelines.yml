@@ -429,6 +429,40 @@ stages:
 
 
                   echo "=========================================="
+                  echo "VERIFYING ROLLBACK"
+                  echo "=========================================="
+
+                  sleep 10
+
+                  STORE_ROLLBACK_STATUS=$(curl \
+                    -L \
+                    --write-out "%{http_code}" \
+                    --silent \
+                    --output /dev/null \
+                    --retry 3 \
+                    --retry-delay 5 \
+                    "https://store.az.mavencrest.site/api/health" || true)
+
+                  ADMIN_ROLLBACK_STATUS=$(curl \
+                    -L \
+                    --write-out "%{http_code}" \
+                    --silent \
+                    --output /dev/null \
+                    --retry 3 \
+                    --retry-delay 5 \
+                    "https://admin.az.mavencrest.site/api/health" || true)
+
+                  echo "Storefront after rollback: $STORE_ROLLBACK_STATUS"
+                  echo "Admin after rollback:      $ADMIN_ROLLBACK_STATUS"
+
+                  if [ "$STORE_ROLLBACK_STATUS" = "200" ] && \
+                    [ "$ADMIN_ROLLBACK_STATUS" = "200" ]; then
+                    echo "ROLLBACK VERIFIED: Production is healthy."
+                  else
+                    echo "CRITICAL: Rollback completed but production is still unhealthy."
+                  fi
+
+                  echo "=========================================="
                   echo "ROLLBACK COMPLETE"
                   echo "=========================================="
 
