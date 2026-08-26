@@ -249,7 +249,7 @@ stages:
                   --query "properties.latestRevisionName" \
                   -o tsv)
 
-                 ADMIN_GOOD_REV=$(az containerapp show \
+                ADMIN_GOOD_REV=$(az containerapp show \
                   --name $(adminContainerApp) \
                   --resource-group $(prodResourceGroup) \
                   --query "properties.latestRevisionName" \
@@ -357,28 +357,37 @@ stages:
                   sleep 10
                 done
 
+                if [ "$STORE_STATE" != "Running" ] || [ "$ADMIN_STATE" != "Running" ]; then
+                  echo "ERROR: One or more new revisions failed to reach Running state."
 
-                echo "=========================================="
-                echo "RUNNING PRODUCTION HEALTH CHECKS"
-                echo "=========================================="
+                  STORE_STATUS="000"
+                  ADMIN_STATUS="000"
 
-                STORE_STATUS=$(curl \
-                  -L \
-                  --write-out "%{http_code}" \
-                  --silent \
-                  --output /dev/null \
-                  --retry 3 \
-                  --retry-delay 5 \
-                  "https://store.az.mavencrest.site/api/health" || true)
+                else
 
-                ADMIN_STATUS=$(curl \
-                  -L \
-                  --write-out "%{http_code}" \
-                  --silent \
-                  --output /dev/null \
-                  --retry 3 \
-                  --retry-delay 5 \
-                  "https://admin.az.mavencrest.site/api/health" || true)
+                  echo "=========================================="
+                  echo "RUNNING PRODUCTION HEALTH CHECKS"
+                  echo "=========================================="
+
+                  STORE_STATUS=$(curl \
+                    -L \
+                    --write-out "%{http_code}" \
+                    --silent \
+                    --output /dev/null \
+                    --retry 3 \
+                    --retry-delay 5 \
+                    "https://store.az.mavencrest.site/api/health" || true)
+
+                  ADMIN_STATUS=$(curl \
+                    -L \
+                    --write-out "%{http_code}" \
+                    --silent \
+                    --output /dev/null \
+                    --retry 3 \
+                    --retry-delay 5 \
+                    "https://admin.az.mavencrest.site/api/health" || true)
+
+                fi
 
                 echo "Storefront HTTP status: $STORE_STATUS"
                 echo "Admin HTTP status:      $ADMIN_STATUS"
@@ -391,16 +400,31 @@ stages:
                   echo "ROLLING BACK"
                   echo "=========================================="
 
-                  echo "Rolling Storefront back to:"
+                  echo "Restoring Storefront revision:"
                   echo "$STORE_GOOD_REV"
+
+                  az containerapp revision activate \
+                    --name $(storefrontContainerApp) \
+                    --resource-group $(prodResourceGroup) \
+                    --revision "$STORE_GOOD_REV"
+
+                  echo "Restoring Admin revision:"
+                  echo "$ADMIN_GOOD_REV"
+
+                  az containerapp revision activate \
+                    --name $(adminContainerApp) \
+                    --resource-group $(prodResourceGroup) \
+                    --revision "$ADMIN_GOOD_REV"
+
+
+                  echo "=========================================="
+                  echo "RESTORING PRODUCTION TRAFFIC"
+                  echo "=========================================="
 
                   az containerapp ingress traffic set \
                     --name $(storefrontContainerApp) \
                     --resource-group $(prodResourceGroup) \
                     --revision-weight "$STORE_GOOD_REV=100"
-
-                  echo "Rolling Admin back to:"
-                  echo "$ADMIN_GOOD_REV"
 
                   az containerapp ingress traffic set \
                     --name $(adminContainerApp) \
@@ -408,38 +432,20 @@ stages:
                     --revision-weight "$ADMIN_GOOD_REV=100"
 
 
-                  echo "Deactivating failed Storefront revision..."
-
-                  if [ "$STORE_NEW_REV" != "$STORE_GOOD_REV" ]; then
-                    az containerapp revision deactivate \
-                      --name $(storefrontContainerApp) \
-                      --resource-group $(prodResourceGroup) \
-                      --revision "$STORE_NEW_REV" || true
-                  fi
-
-
-                  echo "Deactivating failed Admin revision..."
-
-                  if [ "$ADMIN_NEW_REV" != "$ADMIN_GOOD_REV" ]; then
-                    az containerapp revision deactivate \
-                      --name $(adminContainerApp) \
-                      --resource-group $(prodResourceGroup) \
-                      --revision "$ADMIN_NEW_REV" || true
-                  fi
+                  echo "Waiting for rollback traffic to stabilize..."
+                  sleep 15
 
 
                   echo "=========================================="
                   echo "VERIFYING ROLLBACK"
                   echo "=========================================="
 
-                  sleep 10
-
                   STORE_ROLLBACK_STATUS=$(curl \
                     -L \
                     --write-out "%{http_code}" \
                     --silent \
                     --output /dev/null \
-                    --retry 3 \
+                    --retry 5 \
                     --retry-delay 5 \
                     "https://store.az.mavencrest.site/api/health" || true)
 
@@ -448,19 +454,49 @@ stages:
                     --write-out "%{http_code}" \
                     --silent \
                     --output /dev/null \
-                    --retry 3 \
+                    --retry 5 \
                     --retry-delay 5 \
                     "https://admin.az.mavencrest.site/api/health" || true)
 
                   echo "Storefront after rollback: $STORE_ROLLBACK_STATUS"
                   echo "Admin after rollback:      $ADMIN_ROLLBACK_STATUS"
 
+
                   if [ "$STORE_ROLLBACK_STATUS" = "200" ] && \
                     [ "$ADMIN_ROLLBACK_STATUS" = "200" ]; then
-                    echo "ROLLBACK VERIFIED: Production is healthy."
+
+                    echo "=========================================="
+                    echo "ROLLBACK VERIFIED"
+                    echo "PRODUCTION IS HEALTHY"
+                    echo "=========================================="
+
+                    echo "Deactivating failed Storefront revision..."
+
+                    if [ "$STORE_NEW_REV" != "$STORE_GOOD_REV" ]; then
+                      az containerapp revision deactivate \
+                        --name $(storefrontContainerApp) \
+                        --resource-group $(prodResourceGroup) \
+                        --revision "$STORE_NEW_REV" || true
+                    fi
+
+                    echo "Deactivating failed Admin revision..."
+
+                    if [ "$ADMIN_NEW_REV" != "$ADMIN_GOOD_REV" ]; then
+                      az containerapp revision deactivate \
+                        --name $(adminContainerApp) \
+                        --resource-group $(prodResourceGroup) \
+                        --revision "$ADMIN_NEW_REV" || true
+                    fi
+
                   else
-                    echo "CRITICAL: Rollback completed but production is still unhealthy."
+
+                    echo "=========================================="
+                    echo "CRITICAL: ROLLBACK FAILED"
+                    echo "PRODUCTION IS STILL UNHEALTHY"
+                    echo "=========================================="
+
                   fi
+
 
                   echo "=========================================="
                   echo "ROLLBACK COMPLETE"
