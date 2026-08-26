@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+try {
+  await db.$queryRaw`SELECT 1`;
 
-export async function GET() {
   return NextResponse.json(
-    {
-      status: "ok",
-      service: "storefront",
-    },
+    { status: "ok", service: "storefront" },
     { status: 200 }
+  );
+} catch {
+  return NextResponse.json(
+    { status: "unhealthy", service: "storefront" },
+    { status: 503 }
   );
 }
