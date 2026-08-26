@@ -243,22 +243,22 @@ stages:
                 echo "CAPTURING CURRENT PRODUCTION REVISIONS"
                 echo "=========================================="
 
-                STORE_GOOD_REV=$(az containerapp ingress traffic show \
+                STORE_GOOD_REV=$(az containerapp show \
                   --name $(storefrontContainerApp) \
                   --resource-group $(prodResourceGroup) \
-                  --query "traffic[?weight==\`100\`].revisionName | [0]" \
+                  --query "properties.latestRevisionName" \
                   -o tsv)
 
-                ADMIN_GOOD_REV=$(az containerapp ingress traffic show \
+                 ADMIN_GOOD_REV=$(az containerapp show \
                   --name $(adminContainerApp) \
                   --resource-group $(prodResourceGroup) \
-                  --query "traffic[?weight==\`100\`].revisionName | [0]" \
+                  --query "properties.latestRevisionName" \
                   -o tsv)
 
-                echo "Previous Storefront revision: $STORE_GOOD_REV"
-                echo "Previous Admin revision:      $ADMIN_GOOD_REV"
+                 echo "Previous Storefront revision: $STORE_GOOD_REV"
+                 echo "Previous Admin revision:      $ADMIN_GOOD_REV"
 
-                if [ -z "$STORE_GOOD_REV" ]; then
+                 if [ -z "$STORE_GOOD_REV" ]; then
                   echo "ERROR: Could not determine current Storefront revision."
                   exit 1
                 fi
