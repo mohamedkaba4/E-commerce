@@ -357,7 +357,7 @@ stages:
                   sleep 10
                 done
 
-                if [ "$STORE_STATE" != "Running" ] || [ "$ADMIN_STATE" != "Running" ]; then
+                  if [ "$STORE_STATE" != "Running" ] || [ "$ADMIN_STATE" != "Running" ]; then
                   echo "ERROR: One or more new revisions failed to reach Running state."
 
                   STORE_STATUS="000"
@@ -366,8 +366,25 @@ stages:
                 else
 
                   echo "=========================================="
-                  echo "RUNNING PRODUCTION HEALTH CHECKS"
+                  echo "TESTING NEW REVISIONS DIRECTLY"
                   echo "=========================================="
+
+                  STORE_NEW_FQDN=$(az containerapp revision show \
+                    --name $(storefrontContainerApp) \
+                    --resource-group $(prodResourceGroup) \
+                    --revision "$STORE_NEW_REV" \
+                    --query "properties.fqdn" \
+                    -o tsv)
+
+                  ADMIN_NEW_FQDN=$(az containerapp revision show \
+                    --name $(adminContainerApp) \
+                    --resource-group $(prodResourceGroup) \
+                    --revision "$ADMIN_NEW_REV" \
+                    --query "properties.fqdn" \
+                    -o tsv)
+
+                  echo "Storefront revision: $STORE_NEW_FQDN"
+                  echo "Admin revision:      $ADMIN_NEW_FQDN"
 
                   STORE_STATUS=$(curl \
                     -L \
@@ -376,7 +393,7 @@ stages:
                     --output /dev/null \
                     --retry 3 \
                     --retry-delay 5 \
-                    "https://store.az.mavencrest.site/api/health" || true)
+                    "https://$STORE_NEW_FQDN/api/health" || true)
 
                   ADMIN_STATUS=$(curl \
                     -L \
@@ -385,52 +402,28 @@ stages:
                     --output /dev/null \
                     --retry 3 \
                     --retry-delay 5 \
-                    "https://admin.az.mavencrest.site/api/health" || true)
+                    "https://$ADMIN_NEW_FQDN/api/health" || true)
 
                 fi
 
-                echo "Storefront HTTP status: $STORE_STATUS"
-                echo "Admin HTTP status:      $ADMIN_STATUS"
+                echo "New Storefront revision status: $STORE_STATUS"
+                echo "New Admin revision status:      $ADMIN_STATUS"
 
 
                 if [ "$STORE_STATUS" != "200" ] || [ "$ADMIN_STATUS" != "200" ]; then
 
                   echo "=========================================="
-                  echo "PRODUCTION HEALTH CHECK FAILED"
+                  echo "NEW REVISION HEALTH CHECK FAILED"
                   echo "ROLLING BACK"
                   echo "=========================================="
 
-                  echo "=========================================="
-                  echo "CAPTURING FAILED REVISION LOGS"
-                  echo "=========================================="
-
-                  echo "Storefront failed revision logs:"
-                  az containerapp logs show \
-                    --name $(storefrontContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$STORE_NEW_REV" \
-                    --type console \
-                    --tail 100 || true
-
-                  echo "Admin failed revision logs:"
-                  az containerapp logs show \
-                    --name $(adminContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$ADMIN_NEW_REV" \
-                    --type console \
-                    --tail 100 || true
-
-                  echo "Restoring Storefront revision:"
-                  echo "$STORE_GOOD_REV"
-
+                  echo "Activating previous Storefront revision..."
                   az containerapp revision activate \
                     --name $(storefrontContainerApp) \
                     --resource-group $(prodResourceGroup) \
                     --revision "$STORE_GOOD_REV"
 
-                  echo "Restoring Admin revision:"
-                  echo "$ADMIN_GOOD_REV"
-
+                  echo "Activating previous Admin revision..."
                   az containerapp revision activate \
                     --name $(adminContainerApp) \
                     --resource-group $(prodResourceGroup) \
@@ -451,8 +444,7 @@ stages:
                     --resource-group $(prodResourceGroup) \
                     --revision-weight "$ADMIN_GOOD_REV=100"
 
-
-                  echo "Waiting for rollback traffic to stabilize..."
+                  echo "Waiting for rollback traffic..."
                   sleep 15
 
 
@@ -483,14 +475,12 @@ stages:
 
 
                   if [ "$STORE_ROLLBACK_STATUS" = "200" ] && \
-                    [ "$ADMIN_ROLLBACK_STATUS" = "200" ]; then
+                     [ "$ADMIN_ROLLBACK_STATUS" = "200" ]; then
 
                     echo "=========================================="
                     echo "ROLLBACK VERIFIED"
                     echo "PRODUCTION IS HEALTHY"
                     echo "=========================================="
-
-                    echo "Deactivating failed Storefront revision..."
 
                     if [ "$STORE_NEW_REV" != "$STORE_GOOD_REV" ]; then
                       az containerapp revision deactivate \
@@ -498,8 +488,6 @@ stages:
                         --resource-group $(prodResourceGroup) \
                         --revision "$STORE_NEW_REV" || true
                     fi
-
-                    echo "Deactivating failed Admin revision..."
 
                     if [ "$ADMIN_NEW_REV" != "$ADMIN_GOOD_REV" ]; then
                       az containerapp revision deactivate \
@@ -517,17 +505,81 @@ stages:
 
                   fi
 
-
-                  echo "=========================================="
-                  echo "ROLLBACK COMPLETE"
-                  echo "=========================================="
-
                   exit 1
                 fi
 
 
                 echo "=========================================="
-                echo "PRODUCTION HEALTH CHECKS PASSED"
+                echo "NEW REVISIONS PASSED - PROMOTING TO PROD"
+                echo "=========================================="
+
+                az containerapp ingress traffic set \
+                  --name $(storefrontContainerApp) \
+                  --resource-group $(prodResourceGroup) \
+                  --revision-weight "$STORE_NEW_REV=100"
+
+                az containerapp ingress traffic set \
+                  --name $(adminContainerApp) \
+                  --resource-group $(prodResourceGroup) \
+                  --revision-weight "$ADMIN_NEW_REV=100"
+
+                echo "Waiting for production traffic..."
+                sleep 15
+
+
+                echo "=========================================="
+                echo "VERIFYING PRODUCTION"
+                echo "=========================================="
+
+                STORE_PROD_STATUS=$(curl \
+                  -L \
+                  --write-out "%{http_code}" \
+                  --silent \
+                  --output /dev/null \
+                  --retry 5 \
+                  --retry-delay 5 \
+                  "https://store.az.mavencrest.site/api/health" || true)
+
+                ADMIN_PROD_STATUS=$(curl \
+                  -L \
+                  --write-out "%{http_code}" \
+                  --silent \
+                  --output /dev/null \
+                  --retry 5 \
+                  --retry-delay 5 \
+                  "https://admin.az.mavencrest.site/api/health" || true)
+
+                echo "Production Storefront: $STORE_PROD_STATUS"
+                echo "Production Admin:      $ADMIN_PROD_STATUS"
+
+
+                if [ "$STORE_PROD_STATUS" != "200" ] || [ "$ADMIN_PROD_STATUS" != "200" ]; then
+                  echo "ERROR: Production verification failed after promotion."
+                  exit 1
+                fi
+
+
+                echo "=========================================="
+                echo "DEACTIVATING PREVIOUS REVISIONS"
+                echo "=========================================="
+
+                if [ "$STORE_GOOD_REV" != "$STORE_NEW_REV" ]; then
+                  az containerapp revision deactivate \
+                    --name $(storefrontContainerApp) \
+                    --resource-group $(prodResourceGroup) \
+                    --revision "$STORE_GOOD_REV" || true
+                fi
+
+                if [ "$ADMIN_GOOD_REV" != "$ADMIN_NEW_REV" ]; then
+                  az containerapp revision deactivate \
+                    --name $(adminContainerApp) \
+                    --resource-group $(prodResourceGroup) \
+                    --revision "$ADMIN_GOOD_REV" || true
+                fi
+
+
+                echo "=========================================="
+                echo "PRODUCTION DEPLOYMENT SUCCESSFUL"
                 echo "=========================================="
 
                 echo "Storefront: $STORE_NEW_REV"
