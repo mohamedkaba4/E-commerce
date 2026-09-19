@@ -9,7 +9,7 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold">Mavencrest Admin</h1>
 
         <p className="mt-3 text-neutral-400">
-          Sign in to access the administration portal.
+          Sign in to access the admin portal.
         </p>
 
         <button
