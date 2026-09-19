@@ -81,3 +81,9 @@ production data.
 ## Admin
 
 [More details](apps/admin/README.md)
+
+## Application CI / CD
+
+The E-Commerce repository builds the application image used by the AWS production environment.
+
+After the Continuous Integration (CI) workflow successfully validates the application, Packer creates a new Amazon Machine Image (AMI) containing the tested application build. This calls the (CD) workflow from the AWS-Mavencreset repo, which then deploys the new application the EC2 instances in AWS with a rolling deployment style that gradually updates VMs are running the old AMI version.
