@@ -21,7 +21,7 @@ env:
   ECR_REGISTRY: 063899249655.dkr.ecr.us-east-1.amazonaws.com
 
   LAMBDA_FUNCTION: mavencrest-storefront-lambda
-  PRODUCTION_URL: https://store.mavencrest.site
+  PRODUCTION_URL: https://stores.mavencrest.site
 
 
 # ============================================================
