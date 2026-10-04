@@ -12,8 +12,9 @@
     "dev:admin": "npm run dev --workspace=apps/admin -- --port 3001",
     "build:store": "npm run build --workspace=apps/storefront",
     "build:admin": "npm run build --workspace=apps/admin",
-
     "db:generate": "prisma generate --schema=packages/database/prisma/schema.prisma"
-
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1146.0"
   }
 }
