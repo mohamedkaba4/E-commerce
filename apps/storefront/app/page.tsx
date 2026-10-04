@@ -1,129 +1,391 @@
-import React from 'react';
-import Link from 'next/link';
+import React from 'react'
+import Link from 'next/link'
 import prisma from '@/lib/prisma'
-import ProductCard from '@/app/components/ProductCard';
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+import ProductCard from '@/app/components/ProductCard'
+import NewArrivalsRail from '@/app/components/NewArrivalsRail'
+import HeroCarousel from '@/app/components/HeroCarousel'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function Home() {
   const categories = [
-    { name: 'Men', slug: 'men', img: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=600&auto=format&fit=crop&q=80' },
-    { name: 'Women', slug: 'women', img: '/wsoccer.jpg' },
-    { name: 'Kids', slug: 'kids', img: '/madrid.jpeg' },
-    { name: 'Running', slug: 'running', img: 'https://d1jpqk4gnxzbj2.cloudfront.net/trackpic.png' },
-    { name: 'Nutrition', slug: 'nutrition', img: 'https://d1jpqk4gnxzbj2.cloudfront.net/nutrition.png' },
-  ];
-  const featuredProducts = await prisma.product.findMany({
-    where: {
-      featured: true,
+    {
+      name: 'Men',
+      slug: 'men',
+      img: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=1200&auto=format&fit=crop&q=85',
     },
-    include: {
-      category: true,
+    {
+      name: 'Women',
+      slug: 'women',
+      img: '/wsoccer.jpg',
     },
-  });
+    {
+      name: 'Kids',
+      slug: 'kids',
+      img: '/madrid.jpeg',
+    },
+    {
+      name: 'Running',
+      slug: 'running',
+      img: 'https://d1jpqk4gnxzbj2.cloudfront.net/trackpic.png',
+    },
+    {
+      name: 'Nutrition',
+      slug: 'nutrition',
+      img: 'https://d1jpqk4gnxzbj2.cloudfront.net/nutrition.png',
+    },
+  ]
+
+  /*
+   * HERO SLIDES
+   *
+   * Slide 1 keeps your current poster.
+   * Slides 2-4 use existing Mavencrest images temporarily.
+   *
+   * Later, replacing a slide is as simple as changing its
+   * "image" URL below.
+   */
+  const heroSlides = [
+    {
+      image: '/madrid.jpeg',
+      eyebrow: 'Seasonal essentials for every training day.',
+      title: 'Fall-Ready Energy',
+      links: [
+        {
+          label: 'Shop All',
+          href: '/products',
+        },
+        {
+          label: 'Shop Men',
+          href: '/products?category=men',
+        },
+        {
+          label: 'Shop Women',
+          href: '/products?category=women',
+        },
+        {
+          label: 'Shop Kids',
+          href: '/products?category=kids',
+        },
+      ],
+    },
+    {
+      image: 'https://d1jpqk4gnxzbj2.cloudfront.net/trackpic.png',
+      eyebrow: 'Built for every mile.',
+      title: 'Run Without Limits',
+      links: [
+        {
+          label: 'Shop Running',
+          href: '/products?category=running',
+        },
+        {
+          label: 'Shop New',
+          href: '/products',
+        },
+      ],
+    },
+    {
+      image: '/wsoccer.jpg',
+      eyebrow: 'Made to move.',
+      title: 'Own The Moment',
+      links: [
+        {
+          label: 'Shop Women',
+          href: '/products?category=women',
+        },
+        {
+          label: 'Shop New Arrivals',
+          href: '/products',
+        },
+      ],
+    },
+    {
+      image: 'https://d1jpqk4gnxzbj2.cloudfront.net/nutrition.png',
+      eyebrow: 'Fuel the work.',
+      title: 'Train. Recover. Repeat.',
+      links: [
+        {
+          label: 'Shop Nutrition',
+          href: '/products?category=nutrition',
+        },
+        {
+          label: 'Shop All',
+          href: '/products',
+        },
+      ],
+    },
+  ]
+
+  const newArrivals =
+    await prisma.product.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        category: true,
+      },
+    })
+
+  const featuredProducts =
+    await prisma.product.findMany({
+      where: {
+        featured: true,
+      },
+      include: {
+        category: true,
+      },
+    })
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col font-sans">
-      {/* Discipline Explorer Grid */}
-      <div className="max-w-[1600px] mx-auto px-6 md:px-10 pt-10 w-full">
-        <section className="mb-16">
-          <div className="mb-8">
-            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">Explore Training Disciplines</h2>
-            <p className="text-zinc-500 text-sm font-light">Gear customized for your specific operational focus.</p>
+    <div className="min-h-screen bg-black text-white">
+      {/* Hero Carousel */}
+      <HeroCarousel slides={heroSlides} />
+
+      {/* New Arrivals */}
+      <NewArrivalsRail
+        products={newArrivals}
+      />
+
+      {/* Mavencrest Edit */}
+      <section className="bg-[#1d1f1f] px-6 pb-16 pt-6 md:px-10 md:pb-20">
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+            The Mavencrest Edit
+          </h2>
+
+          <Link
+            href="/products"
+            className="text-sm underline underline-offset-4 transition hover:text-neutral-300 md:text-base"
+          >
+            Shop All
+          </Link>
+        </div>
+
+        <div className="mb-10 overflow-x-auto">
+          <div className="flex min-w-max border-b border-neutral-600">
+            <Link
+              href="/products"
+              className="border-b-2 border-white px-6 py-4 text-base font-medium text-white md:px-8"
+            >
+              All
+            </Link>
+
+            <Link
+              href="/products?category=men"
+              className="px-6 py-4 text-base font-medium text-neutral-300 transition hover:text-white md:px-8"
+            >
+              Men's
+            </Link>
+
+            <Link
+              href="/products?category=women"
+              className="px-6 py-4 text-base font-medium text-neutral-300 transition hover:text-white md:px-8"
+            >
+              Women's
+            </Link>
+
+            <Link
+              href="/products?category=kids"
+              className="px-6 py-4 text-base font-medium text-neutral-300 transition hover:text-white md:px-8"
+            >
+              Kids'
+            </Link>
+
+            <Link
+              href="/products?category=running"
+              className="px-6 py-4 text-base font-medium text-neutral-300 transition hover:text-white md:px-8"
+            >
+              Running
+            </Link>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {categories.map((cat) => (
-              <Link 
-                key={cat.slug} 
-                href={`/categories/${cat.slug}`}
-                className="relative h-72 group overflow-hidden bg-zinc-900 border border-zinc-900 transition-all duration-300 hover:border-zinc-700 block"
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {featuredProducts
+            .slice(0, 4)
+            .map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+              />
+            ))}
+        </div>
+      </section>
+
+      {/* Training Disciplines */}
+      <section className="mx-auto w-full max-w-[1600px] px-6 py-16 md:px-10">
+        <div className="mb-8">
+          <h2 className="text-2xl font-black uppercase tracking-tight md:text-3xl">
+            Explore Training Disciplines
+          </h2>
+
+          <p className="mt-2 text-sm text-zinc-500">
+            Gear built for the way you train.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          {categories.map(
+            (category) => (
+              <Link
+                key={category.slug}
+                href={`/categories/${category.slug}`}
+                className="group relative block h-72 overflow-hidden bg-zinc-900"
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-                <div 
-                  className="absolute inset-0 scale-100 group-hover:scale-105 transition-transform duration-500 bg-center bg-cover opacity-60" 
-                  style={{ backgroundImage: `url('${cat.img}')` }} 
+                <div className="absolute inset-0 z-10 bg-gradient-to-t from-black via-black/35 to-transparent" />
+
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-70 transition-transform duration-500 group-hover:scale-105"
+                  style={{
+                    backgroundImage: `url('${category.img}')`,
+                  }}
                 />
+
                 <div className="absolute bottom-4 left-4 z-20">
-                  <h3 className="text-lg font-black uppercase tracking-tight text-white mb-0.5">{cat.name}</h3>
-                  <span className="text-zinc-400 text-[10px] font-mono tracking-widest uppercase group-hover:text-white group-hover:underline">
-                    Explore Gear &rarr;
+                  <h3 className="text-lg font-black uppercase tracking-tight">
+                    {category.name}
+                  </h3>
+
+                  <span className="mt-1 block text-[10px] uppercase tracking-widest text-zinc-300">
+                    Explore Gear →
                   </span>
                 </div>
               </Link>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      {/* Dynamic Showcase Catalog Items Block */}
-      <div className="max-w-[1600px] mx-auto px-6 md:px-10 pb-24 w-full">
-        <div className="flex items-baseline justify-between mb-8 border-b border-zinc-900 pb-4">
-          <h2 className="text-2xl font-black uppercase tracking-tight">Featured Training Gear</h2>
+            )
+          )}
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {featuredProducts.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-        />
-      ))}
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-zinc-900 bg-[#0a0a0a] py-16 text-xs text-zinc-400">
+        <div className="mx-auto mb-16 grid max-w-[1600px] grid-cols-2 gap-x-8 gap-y-12 px-6 md:grid-cols-4 md:px-10">
+          <div>
+            <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-white">
+              Company
+            </h4>
+
+            <ul className="space-y-3 text-xs font-medium text-zinc-500">
+              <li>
+                <Link
+                  href="/about"
+                  className="hover:text-white"
+                >
+                  About Us
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/careers"
+                  className="hover:text-white"
+                >
+                  Careers
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/sustainability"
+                  className="hover:text-white"
+                >
+                  Sustainability
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-white">
+              Services
+            </h4>
+
+            <ul className="space-y-3 text-xs font-medium text-zinc-500">
+              <li>
+                <Link
+                  href="/account"
+                  className="hover:text-white"
+                >
+                  My Account
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/orders"
+                  className="hover:text-white"
+                >
+                  Track Order
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/support"
+                  className="hover:text-white"
+                >
+                  Contact Support
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-white">
+              Shop
+            </h4>
+
+            <ul className="space-y-3 text-xs font-medium text-zinc-500">
+              <li>
+                <Link
+                  href="/products?category=men"
+                  className="hover:text-white"
+                >
+                  Men
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/products?category=women"
+                  className="hover:text-white"
+                >
+                  Women
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/products?category=running"
+                  className="hover:text-white"
+                >
+                  Running
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-white">
+              Mavencrest
+            </h4>
+
+            <p className="max-w-xs leading-6 text-zinc-500">
+              Performance gear for training, running and everyday movement.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Premium Multi-Column Brand Footer */}
-      <footer className="bg-[#0A0A0A] border-t border-zinc-900 text-zinc-400 text-xs py-16 mt-auto w-full">
-        <div className="max-w-[1600px] mx-auto px-6 md:px-10 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12 mb-16">
-          <div>
-            <h4 className="text-white font-bold uppercase tracking-widest mb-5 text-[11px]">Company</h4>
-            <ul className="space-y-3 font-medium text-zinc-500 text-xs">
-              <li><Link className="hover:text-white transition-colors duration-200" href="/about">About Us</Link></li>
-              <li><Link className="hover:text-white transition-colors duration-200" href="/careers">Careers</Link></li>
-              <li><Link className="hover:text-white transition-colors duration-200" href="/sustainability">Sustainability</Link></li>
-              <li><Link className="hover:text-white transition-colors duration-200" href="/press">Press Room</Link></li>
-            </ul>
-          </div>
+        <div className="mx-auto max-w-[1600px] border-t border-zinc-900 px-6 pt-10 text-center md:px-10">
+          <span className="text-xl font-black italic tracking-tighter text-white">
+            MAVENCREST
+          </span>
 
-          <div>
-            <h4 className="text-white font-bold uppercase tracking-widest mb-5 text-[11px]">Services</h4>
-            <ul className="space-y-3 font-medium text-zinc-500 text-xs">
-              <li><Link href="/account" className="hover:text-white transition-colors duration-200">My Account</Link></li>
-              <li><Link href="/orders" className="hover:text-white transition-colors duration-200">Track Order</Link></li>
-              <li><Link href="/gift-cards" className="hover:text-white transition-colors duration-200">Gift Cards</Link></li>
-              <li><Link href="/support" className="hover:text-white transition-colors duration-200">Contact Support</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold uppercase tracking-widest mb-5 text-[11px]">Shop</h4>
-            <ul className="space-y-3 font-medium text-zinc-500 text-xs">
-              <li><Link href="/categories/all" className="hover:text-white transition-colors duration-200">All Gear</Link></li>
-              <li><Link href="/categories/men" className="hover:text-white transition-colors duration-200">Men's Segment</Link></li>
-              <li><Link href="/categories/women" className="hover:text-white transition-colors duration-200">Women's Segment</Link></li>
-              <li><Link href="/categories/running" className="hover:text-white transition-colors duration-200">Running & Athletics</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold uppercase tracking-widest mb-5 text-[11px]">Resources</h4>
-            <ul className="space-y-3 font-medium text-zinc-500 text-xs">
-              <li><Link href="/returns" className="hover:text-white transition-colors duration-200">Return Policy</Link></li>
-              <li><Link href="/shipping" className="hover:text-white transition-colors duration-200">Shipping Rates</Link></li>
-              <li><Link href="/security" className="hover:text-white transition-colors duration-200">Privacy & Security</Link></li>
-              <li><Link href="/terms" className="hover:text-white transition-colors duration-200">Terms of Service</Link></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="max-w-[1600px] mx-auto px-6 md:px-10 pt-10 border-t border-zinc-900 flex flex-col items-center justify-center gap-3 text-center">
-          <span className="text-xl font-[1000] tracking-tighter italic uppercase text-white">MAVENCREST</span>
-          <p className="text-zinc-600 text-[10px] tracking-widest uppercase font-mono">
+          <p className="mt-3 text-[10px] uppercase tracking-widest text-zinc-600">
             © 2026 MAVENCREST Sporting Goods Co. All Rights Reserved.
           </p>
         </div>
       </footer>
     </div>
-  );
+  )
 }

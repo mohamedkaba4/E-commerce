@@ -1,138 +1,160 @@
 'use client'
 
 import Link from 'next/link'
-import { useSession, signOut } from 'next-auth/react'
-import { useCart } from '@/store/useCart'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { Menu, Search, X } from 'lucide-react'
+import HeaderActions from './HeaderActions'
 
 const navLinks = [
-  { label: 'Men', href: '/products?category=men' },
-  { label: 'Women', href: '/products?category=women' },
-  { label: 'Kids', href: '/products?category=kids' },
-  { label: 'Running', href: '/products?category=running' },
-  { label: 'Nutrition', href: '/products?category=nutrition' },
-  { label: 'Sale', href: '/products?sale=true', accent: true },
+  {
+    label: 'New',
+    href: '/products',
+  },
+  {
+    label: 'Men',
+    href: '/products?category=men',
+  },
+  {
+    label: 'Women',
+    href: '/products?category=women',
+  },
+  {
+    label: 'Kids',
+    href: '/products?category=kids',
+  },
+  {
+    label: 'Running',
+    href: '/products?category=running',
+  },
+  {
+    label: 'Nutrition',
+    href: '/products?category=nutrition',
+  },
+  {
+    label: 'Sale',
+    href: '/products?sale=true',
+  },
 ]
 
 export default function Navbar() {
-  const { data: session } = useSession()
-  const { totalItems, toggleCart } = useCart()
-  const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const itemCount = totalItems()
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   return (
-    <>
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled ? 'bg-black/95 backdrop-blur-md border-b border-neutral-800' : 'bg-black'
-        }`}
-      >
-        <div className="max-w-[1500px] mx-auto px-6 md:px-12 h-[60px] flex items-center justify-between">
+    <header className="sticky top-0 z-50 w-full">
+      {/* Utility Bar */}
+      <div className="relative hidden h-8 bg-black text-white md:block">
+        <div className="mx-auto flex h-full max-w-[1600px] items-center justify-end px-8 xl:px-12">
+          <p className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] font-medium tracking-wide">
+            FREE SHIPPING ON ORDERS $75+
+          </p>
+
+          <div className="flex items-center gap-6 text-[11px] text-neutral-300">
+            <Link
+              href="/support"
+              className="transition-colors hover:text-white"
+            >
+              Help
+            </Link>
+
+            <span>US</span>
+
+            <Link
+              href="/auth/login"
+              className="transition-colors hover:text-white"
+            >
+              Log In
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Navigation */}
+      <div className="border-b border-neutral-200 bg-white text-black">
+        <div className="mx-auto flex h-[72px] max-w-[1600px] items-center px-4 sm:px-6 lg:px-8 xl:px-12">
           {/* Logo */}
           <Link
             href="/"
-            className="font-black text-xl italic tracking-tighter text-white hover:text-brand-accent transition-colors duration-200 select-none"
+            className="mr-8 flex flex-shrink-0 items-center"
+            aria-label="Mavencrest Home"
           >
-            MAVENCREST
+            <img
+              src="/logo.svg"
+              alt="Mavencrest"
+              className="h-11 w-auto object-contain"
+            />
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className={`nav-link ${
-                  link.accent ? 'text-red-500 hover:text-red-400' : ''
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
+          {/* Desktop Navigation */}
+          <nav className="hidden h-full flex-1 items-center lg:flex">
+            <div className="flex h-full items-center gap-7 xl:gap-9">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`relative flex h-full items-center text-[14px] font-semibold transition-colors after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-0 after:bg-black after:transition-all hover:after:w-full ${
+                    link.label === 'Sale'
+                      ? 'text-red-600'
+                      : 'text-black'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </nav>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-4">
-            {/* Search */}
+          {/* Right Side */}
+          <div className="ml-auto flex items-center gap-1 xl:gap-3">
+            {/* Desktop Search */}
+            <form
+              action="/products"
+              method="GET"
+              className="relative hidden xl:block"
+            >
+              <input
+                type="search"
+                name="q"
+                placeholder="Search"
+                className="h-10 w-[220px] border-b border-neutral-500 bg-transparent pl-1 pr-9 text-sm text-black outline-none placeholder:text-neutral-500 transition-colors focus:border-black"
+              />
+
+              <Search
+                className="pointer-events-none absolute right-2 top-1/2 h-[19px] w-[19px] -translate-y-1/2"
+                strokeWidth={1.7}
+              />
+            </form>
+
+            {/* Tablet Search Icon */}
             <Link
               href="/products"
-              className="text-neutral-400 hover:text-white transition-colors"
-              aria-label="Search"
+              className="hidden h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 md:flex xl:hidden"
+              aria-label="Search products"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <Search
+                className="h-[21px] w-[21px]"
+                strokeWidth={1.7}
+              />
             </Link>
 
-            {/* Account */}
-            {session ? (
-              <div className="relative group">
-                <button className="text-neutral-400 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </button>
-                <div className="absolute right-0 top-8 w-44 bg-neutral-900 border border-neutral-800 rounded-sm opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-2xl">
-                  <div className="px-3 py-2 border-b border-neutral-800">
-                    <p className="text-[10px] text-neutral-500 uppercase tracking-widest">Signed in as</p>
-                    <p className="text-xs text-white truncate mt-0.5">{session.user?.email}</p>
-                  </div>
-                  <Link href="/orders" className="block px-3 py-2 text-xs text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
-                    My Orders
-                  </Link>
-                  <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                    className="w-full text-left px-3 py-2 text-xs text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <Link
-                href="/auth/signin"
-                className="hidden md:block text-[10px] font-black uppercase tracking-[0.2em] bg-brand-accent text-black px-4 py-2 hover:bg-white transition-colors duration-200"
-              >
-                Sign In
-              </Link>
-            )}
+            <HeaderActions />
 
-            {/* Cart */}
+            {/* Mobile Menu Button */}
             <button
-              onClick={toggleCart}
-              className="relative text-neutral-400 hover:text-white transition-colors"
-              aria-label="Open cart"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-              {itemCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-brand-accent text-black text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-                  {itemCount > 9 ? '9+' : itemCount}
-                </span>
-              )}
-            </button>
-
-            {/* Mobile menu */}
-            <button
-              className="md:hidden text-neutral-400 hover:text-white transition-colors"
+              type="button"
               onClick={() => setMenuOpen(!menuOpen)}
+              className="ml-1 flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 lg:hidden"
+              aria-label="Toggle navigation"
             >
               {menuOpen ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X
+                  className="h-6 w-6"
+                  strokeWidth={1.7}
+                />
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <Menu
+                  className="h-6 w-6"
+                  strokeWidth={1.7}
+                />
               )}
             </button>
           </div>
@@ -140,31 +162,64 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="md:hidden bg-black border-t border-neutral-900 px-6 py-4 flex flex-col gap-4">
-            {navLinks.map((link) => (
+          <div className="border-t border-neutral-200 bg-white lg:hidden">
+            {/* Mobile Search */}
+            <form
+              action="/products"
+              method="GET"
+              className="border-b border-neutral-200 p-4"
+            >
+              <div className="relative">
+                <input
+                  type="search"
+                  name="q"
+                  placeholder="Search Mavencrest"
+                  className="h-12 w-full bg-neutral-100 px-4 pr-11 text-sm outline-none placeholder:text-neutral-500"
+                />
+
+                <Search
+                  className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2"
+                  strokeWidth={1.7}
+                />
+              </div>
+            </form>
+
+            {/* Mobile Links */}
+            <nav className="flex flex-col">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={`flex min-h-[54px] items-center border-b border-neutral-100 px-5 text-base font-semibold ${
+                    link.label === 'Sale'
+                      ? 'text-red-600'
+                      : 'text-black'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="flex gap-6 px-5 py-5 text-sm text-neutral-600">
               <Link
-                key={link.label}
-                href={link.href}
+                href="/support"
                 onClick={() => setMenuOpen(false)}
-                className={`nav-link text-sm ${link.accent ? 'text-red-500' : ''}`}
               >
-                {link.label}
+                Help
               </Link>
-            ))}
-            {!session && (
+
               <Link
-                href="/auth/signin"
+                href="/auth/login"
                 onClick={() => setMenuOpen(false)}
-                className="text-[10px] font-black uppercase tracking-[0.2em] bg-brand-accent text-black px-4 py-2 text-center"
               >
-                Sign In
+                Log In
               </Link>
-            )}
+            </div>
           </div>
         )}
-      </nav>
-      {/* Spacer */}
-      <div className="h-[60px]" />
-    </>
+      </div>
+    </header>
   )
 }

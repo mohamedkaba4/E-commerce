@@ -25,7 +25,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {/* Sub-Nav Layout */}
       <div className="max-w-[1600px] mx-auto px-10 py-8 flex justify-between items-center border-b border-white/5">
         <Link href="/" className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 hover:text-white transition-all italic">
-          ← Mavencrest Storefront
+          ← Mavencrest Store
         </Link>
         <div className="flex gap-6 text-[10px] font-bold uppercase tracking-widest text-neutral-400">
            <span>Sort</span>
