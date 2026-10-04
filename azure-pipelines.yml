@@ -12,11 +12,11 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  stagingConnection: 'sc-mcrest-staging'
-  prodConnection: 'sc-mcrest-prod'
+  stagingConnection: 'mavencrest-staging-sc'
+  prodConnection: 'mavencrest-prod-sc'
 
-  acrName: 'acrmavencrestprodzcjo'
-  acrLoginServer: 'acrmavencrestprodzcjo.azurecr.io'
+  acrName: 'acrmavencrestproda1wl'
+  acrLoginServer: 'acrmavencrestproda1wl.azurecr.io'
   
   stagingResourceGroup: 'rg-mavencrest-staging'
   prodResourceGroup: 'rg-mavencrest-prod'
