@@ -1,7 +1,11 @@
 name: Build Mavencrest AMI
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
     branches:
       - main
 
@@ -11,11 +15,14 @@ permissions:
 
 jobs:
   build-ami:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout tested commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -64,6 +71,12 @@ jobs:
         id: ami
         run: |
           AMI_ID=$(jq -r '.builds[-1].artifact_id' manifest.json | cut -d: -f2)
+
+          if [ -z "$AMI_ID" ] || [ "$AMI_ID" = "null" ]; then
+            echo "Failed to capture AMI ID"
+            exit 1
+          fi
+
           echo "ami_id=$AMI_ID" >> "$GITHUB_OUTPUT"
           echo "Built AMI: $AMI_ID"
 
