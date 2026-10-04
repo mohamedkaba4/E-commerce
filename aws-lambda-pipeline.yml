@@ -1,0 +1,429 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  awsConnection: 'mavencrest-aws-prod-sc'
+  awsRegion: 'us-east-1'
+
+  awsAccountId: '063899249655'
+  ecrRepository: 'mavencrest-lambda'
+  ecrRegistry: '063899249655.dkr.ecr.us-east-1.amazonaws.com'
+
+  lambdaFunction: 'mavencrest-storefront-lambda'
+
+  imageTag: '$(Build.BuildId)'
+  imageUri: '$(ecrRegistry)/$(ecrRepository):$(imageTag)'
+
+  productionUrl: 'https://store.mavencrest.site'
+
+
+stages:
+
+# ============================================================
+# TEST
+# ============================================================
+
+- stage: Test
+  displayName: Test Application
+
+  jobs:
+  - job: TestApplication
+    displayName: Test and Validate Storefront
+
+    steps:
+    - checkout: self
+
+    - task: NodeTool@0
+      displayName: Use Node.js 24
+      inputs:
+        versionSpec: '24.x'
+
+    - script: npm ci
+      displayName: Install Dependencies
+
+    - script: npm run db:generate
+      displayName: Generate Prisma Client
+
+    - script: npm run build:store
+      displayName: Build Storefront
+
+
+# ============================================================
+# BUILD
+# ============================================================
+
+- stage: Build
+  displayName: Build, Scan and Push Lambda Image
+  dependsOn: Test
+  condition: succeeded()
+
+  jobs:
+  - job: BuildImage
+    displayName: Build Lambda Container Image
+
+    steps:
+    - checkout: self
+
+    # --------------------------------------------------------
+    # Build Next.js standalone artifact
+    # --------------------------------------------------------
+
+    - task: NodeTool@0
+      displayName: Use Node.js 24
+      inputs:
+        versionSpec: '24.x'
+
+    - script: npm ci
+      displayName: Install Dependencies
+
+    - script: npm run db:generate
+      displayName: Generate Prisma Client
+
+    - script: npm run build:store
+      displayName: Build Next.js Storefront
+
+    # --------------------------------------------------------
+    # Prepare Lambda artifact
+    # --------------------------------------------------------
+
+    - script: |
+        set -e
+
+        echo "Preparing Next.js standalone Lambda artifact..."
+
+        rm -rf app
+        mkdir -p app
+
+        cp -R \
+          apps/storefront/.next/standalone/. \
+          app/
+
+        mkdir -p \
+          app/apps/storefront/.next/static
+
+        cp -R \
+          apps/storefront/.next/static/. \
+          app/apps/storefront/.next/static/
+
+        cp -R \
+          apps/storefront/public \
+          app/apps/storefront/public
+
+        find app -name '.env*' -type f -delete
+        find app -name '.DS_Store' -delete
+
+        echo "Lambda artifact prepared."
+      displayName: Prepare Lambda Artifact
+
+    # --------------------------------------------------------
+    # Install Trivy
+    # --------------------------------------------------------
+
+    - script: |
+        echo "Installing Trivy..."
+        curl -sfL \
+          https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+          | sh -s -- -b /usr/local/bin
+      displayName: Install Trivy
+
+    # --------------------------------------------------------
+    # AWS login + ARM64 image build
+    # --------------------------------------------------------
+
+    - task: AWSShellScript@1
+      displayName: Build Lambda ARM64 Image
+      inputs:
+        awsCredentials: '$(awsConnection)'
+        regionName: '$(awsRegion)'
+        scriptType: inline
+        inlineScript: |
+          set -e
+
+          echo "=========================================="
+          echo "LOGGING INTO AMAZON ECR"
+          echo "=========================================="
+
+          aws ecr get-login-password \
+            --region $(awsRegion) \
+            | docker login \
+                --username AWS \
+                --password-stdin \
+                $(ecrRegistry)
+
+          echo "=========================================="
+          echo "CONFIGURING ARM64 BUILDER"
+          echo "=========================================="
+
+          docker run \
+            --privileged \
+            --rm \
+            tonistiigi/binfmt \
+            --install arm64
+
+          docker buildx create \
+            --name lambda-builder \
+            --use || docker buildx use lambda-builder
+
+          docker buildx inspect --bootstrap
+
+          echo "=========================================="
+          echo "BUILDING LAMBDA IMAGE"
+          echo "=========================================="
+
+          docker buildx build \
+            --platform linux/arm64 \
+            --provenance=false \
+            --load \
+            -f Dockerfile.lambda \
+            -t $(imageUri) \
+            .
+
+    # --------------------------------------------------------
+    # Security scan
+    # --------------------------------------------------------
+
+    - script: |
+        trivy image \
+          --severity HIGH,CRITICAL \
+          --exit-code 0 \
+          $(imageUri)
+      displayName: Scan Lambda Image with Trivy
+
+    # --------------------------------------------------------
+    # Push immutable image
+    # --------------------------------------------------------
+
+    - task: AWSShellScript@1
+      displayName: Push Image to Amazon ECR
+      inputs:
+        awsCredentials: '$(awsConnection)'
+        regionName: '$(awsRegion)'
+        scriptType: inline
+        inlineScript: |
+          set -e
+
+          aws ecr get-login-password \
+            --region $(awsRegion) \
+            | docker login \
+                --username AWS \
+                --password-stdin \
+                $(ecrRegistry)
+
+          echo "Pushing:"
+          echo "$(imageUri)"
+
+          docker push $(imageUri)
+
+
+# ============================================================
+# DEPLOY PRODUCTION
+# ============================================================
+
+- stage: DeployProd
+  displayName: Deploy Lambda Production
+  dependsOn: Build
+
+  condition: |
+    and(
+      succeeded(),
+      eq(variables['Build.SourceBranch'], 'refs/heads/main')
+    )
+
+  jobs:
+
+  - deployment: Deploy
+    displayName: Deploy Lambda with Automatic Rollback
+
+    environment: Prod
+
+    strategy:
+      runOnce:
+        deploy:
+
+          steps:
+
+          - task: AWSShellScript@1
+            displayName: Deploy Lambda and Verify
+            inputs:
+              awsCredentials: '$(awsConnection)'
+              regionName: '$(awsRegion)'
+              scriptType: inline
+
+              inlineScript: |
+                set -e
+
+                echo "=========================================="
+                echo "CAPTURING CURRENT PRODUCTION IMAGE"
+                echo "=========================================="
+
+                PREVIOUS_IMAGE=$(aws lambda get-function \
+                  --function-name $(lambdaFunction) \
+                  --region $(awsRegion) \
+                  --query 'Code.ImageUri' \
+                  --output text)
+
+                echo "Previous image:"
+                echo "$PREVIOUS_IMAGE"
+
+                if [ -z "$PREVIOUS_IMAGE" ] || [ "$PREVIOUS_IMAGE" = "None" ]; then
+                  echo "ERROR: Could not determine current Lambda image."
+                  exit 1
+                fi
+
+
+                echo "=========================================="
+                echo "DEPLOYING NEW LAMBDA IMAGE"
+                echo "=========================================="
+
+                echo "New image:"
+                echo "$(imageUri)"
+
+                aws lambda update-function-code \
+                  --function-name $(lambdaFunction) \
+                  --image-uri $(imageUri) \
+                  --region $(awsRegion)
+
+
+                echo "=========================================="
+                echo "WAITING FOR LAMBDA UPDATE"
+                echo "=========================================="
+
+                aws lambda wait function-updated \
+                  --function-name $(lambdaFunction) \
+                  --region $(awsRegion)
+
+
+                echo "=========================================="
+                echo "CHECKING LAMBDA STATE"
+                echo "=========================================="
+
+                FUNCTION_STATE=$(aws lambda get-function-configuration \
+                  --function-name $(lambdaFunction) \
+                  --region $(awsRegion) \
+                  --query 'State' \
+                  --output text)
+
+                UPDATE_STATUS=$(aws lambda get-function-configuration \
+                  --function-name $(lambdaFunction) \
+                  --region $(awsRegion) \
+                  --query 'LastUpdateStatus' \
+                  --output text)
+
+                echo "Lambda state:         $FUNCTION_STATE"
+                echo "Lambda update status: $UPDATE_STATUS"
+
+
+                if [ "$FUNCTION_STATE" != "Active" ] || \
+                   [ "$UPDATE_STATUS" != "Successful" ]; then
+
+                  echo "Lambda deployment failed."
+
+                  PROD_STATUS="000"
+
+                else
+
+                  echo "=========================================="
+                  echo "TESTING PRODUCTION"
+                  echo "=========================================="
+
+                  sleep 10
+
+                  PROD_STATUS=$(curl \
+                    -L \
+                    --write-out "%{http_code}" \
+                    --silent \
+                    --output /dev/null \
+                    --retry 5 \
+                    --retry-delay 5 \
+                    "$(productionUrl)/api/health" || true)
+
+                fi
+
+
+                echo "Production status: $PROD_STATUS"
+
+
+                # ==================================================
+                # ROLLBACK
+                # ==================================================
+
+                if [ "$PROD_STATUS" != "200" ]; then
+
+                  echo "=========================================="
+                  echo "NEW DEPLOYMENT FAILED HEALTH CHECK"
+                  echo "ROLLING BACK"
+                  echo "=========================================="
+
+                  echo "Restoring:"
+                  echo "$PREVIOUS_IMAGE"
+
+                  aws lambda update-function-code \
+                    --function-name $(lambdaFunction) \
+                    --image-uri "$PREVIOUS_IMAGE" \
+                    --region $(awsRegion)
+
+                  echo "Waiting for rollback..."
+
+                  aws lambda wait function-updated \
+                    --function-name $(lambdaFunction) \
+                    --region $(awsRegion)
+
+
+                  echo "=========================================="
+                  echo "VERIFYING ROLLBACK"
+                  echo "=========================================="
+
+                  sleep 10
+
+                  ROLLBACK_STATUS=$(curl \
+                    -L \
+                    --write-out "%{http_code}" \
+                    --silent \
+                    --output /dev/null \
+                    --retry 5 \
+                    --retry-delay 5 \
+                    "$(productionUrl)/api/health" || true)
+
+                  echo "Production after rollback: $ROLLBACK_STATUS"
+
+
+                  if [ "$ROLLBACK_STATUS" = "200" ]; then
+
+                    echo "=========================================="
+                    echo "ROLLBACK VERIFIED"
+                    echo "PRODUCTION IS HEALTHY"
+                    echo "=========================================="
+
+                  else
+
+                    echo "=========================================="
+                    echo "CRITICAL: ROLLBACK FAILED"
+                    echo "PRODUCTION IS UNHEALTHY"
+                    echo "=========================================="
+
+                  fi
+
+                  exit 1
+
+                fi
+
+
+                echo "=========================================="
+                echo "PRODUCTION DEPLOYMENT SUCCESSFUL"
+                echo "=========================================="
+
+                echo "Image:"
+                echo "$(imageUri)"
+
+                echo "Application:"
+                echo "$(productionUrl)"
