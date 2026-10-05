@@ -318,54 +318,9 @@ jobs:
           # ROLLBACK
           # ==================================================
 
-          if [ "$PROD_STATUS" != "200" ]; then
-
-            echo "=========================================="
-            echo "HEALTH CHECK FAILED"
-            echo "ROLLING BACK"
-            echo "=========================================="
-
-            aws lambda update-function-code \
-              --function-name "$LAMBDA_FUNCTION" \
-              --image-uri "$PREVIOUS_IMAGE" \
-              --region "$AWS_REGION"
-
-
-            aws lambda wait function-updated \
-              --function-name "$LAMBDA_FUNCTION" \
-              --region "$AWS_REGION"
-
-            sleep 10
-
-
-            ROLLBACK_STATUS=$(curl \
-              -L \
-              --write-out "%{http_code}" \
-              --silent \
-              --output /dev/null \
-              --retry 5 \
-              --retry-delay 5 \
-              "${PRODUCTION_URL}/api/health" || true)
-
-
-            echo "Rollback status: $ROLLBACK_STATUS"
-
-
-            if [ "$ROLLBACK_STATUS" = "200" ]; then
-
-              echo "=========================================="
-              echo "ROLLBACK VERIFIED"
-              echo "PRODUCTION IS HEALTHY"
-              echo "=========================================="
-
-            else
-
-              echo "=========================================="
-              echo "CRITICAL: ROLLBACK FAILED"
-              echo "=========================================="
-
-            fi
-
+                  if [ "$PROD_STATUS" != "200" ]; then
+            echo "Health check failed."
+            echo "Leaving new image deployed for troubleshooting."
             exit 1
           fi
 
