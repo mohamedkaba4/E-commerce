@@ -9,10 +9,6 @@ node_modules
 
 npm-debug.log*
 
-# Keep dependencies and compiled Next.js files inside Lambda standalone artifact
-!app/node_modules/
-!app/node_modules/**
-!app/apps/storefront/node_modules/
-!app/apps/storefront/node_modules/**
-!app/apps/storefront/.next/
-!app/apps/storefront/.next/**
+# Lambda standalone artifact must be copied completely
+!app/
+!app/**
