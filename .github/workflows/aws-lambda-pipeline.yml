@@ -92,30 +92,21 @@ jobs:
       # PREPARE NEXT.JS STANDALONE ARTIFACT
       # --------------------------------------------------------
 
-      - name: Prepare Lambda Artifact
+      - name: Prepare Lambda standalone artifact
         run: |
-          set -e
-
-          echo "Preparing Next.js standalone Lambda artifact..."
-
           rm -rf app
           mkdir -p app
-
-          cp -R \
-            apps/storefront/.next/standalone/. \
-            app/
-
-          mkdir -p \
-            app/apps/storefront/.next/static
-
-          cp -R \
-            apps/storefront/.next/static/. \
+      
+          # Copy complete standalone output and dereference dependency symlinks
+          rsync -aL apps/storefront/.next/standalone/ app/
+      
+          mkdir -p app/apps/storefront/.next/static
+          rsync -a apps/storefront/.next/static/ \
             app/apps/storefront/.next/static/
-
-          cp -R \
-            apps/storefront/public \
-            app/apps/storefront/public
-
+      
+          rsync -a apps/storefront/public/ \
+            app/apps/storefront/public/
+      
           find app -name '.env*' -type f -delete
           find app -name '.DS_Store' -delete
 
@@ -165,12 +156,21 @@ jobs:
             --platform linux/arm64 \
             --provenance=false \
             --load \
-            -f Dockerfile.lambda \
+            -f apps/storefront/Dockerfile.lambda \
             -t "$IMAGE_URI" \
             .
 
           echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
 
+      - name: Verify Lambda standalone dependencies
+        run: |
+          cd app/apps/storefront
+      
+          node -e '
+            console.log("NEXT:", require.resolve("next"));
+            console.log("SWC:", require.resolve("@swc/helpers/_/_interop_require_default"));
+            console.log("Lambda standalone artifact OK");
+          '
 
       # --------------------------------------------------------
       # SECURITY SCAN
