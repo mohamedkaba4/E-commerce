@@ -10,6 +10,9 @@ ENV NODE_ENV=production
 WORKDIR /var/task
 
 COPY app/ ./
+
+RUN npm install --no-save @aws-sdk/client-ssm
+
 COPY bootstrap.js ./
 
 CMD ["node", "bootstrap.js"]

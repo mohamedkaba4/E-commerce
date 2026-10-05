@@ -15,6 +15,7 @@
     "db:generate": "prisma generate --schema=packages/database/prisma/schema.prisma"
   },
   "dependencies": {
-    "@aws-sdk/client-secrets-manager": "^3.1146.0"
+    "@aws-sdk/client-secrets-manager": "^3.1146.0",
+    "@aws-sdk/client-ssm": "^3.1146.0"
   }
 }

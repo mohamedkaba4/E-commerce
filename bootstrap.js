@@ -1,30 +1,50 @@
-const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
+const {
+  SSMClient,
+  GetParametersCommand,
+} = require("@aws-sdk/client-ssm");
+
 const { spawn } = require("node:child_process");
 
 async function main() {
-  const secretId = process.env.APP_SECRET_ID;
+  const prefix = process.env.SSM_PARAMETER_PREFIX || "/nextjs/prod";
 
-  if (!secretId) {
-    throw new Error("APP_SECRET_ID is not set");
-  }
+  const parameterNames = [
+    `${prefix}/DATABASE_URL`,
+    `${prefix}/NEXTAUTH_SECRET`,
+    `${prefix}/GOOGLE_CLIENT_ID`,
+    `${prefix}/GOOGLE_CLIENT_SECRET`,
+    `${prefix}/GITHUB_ID`,
+    `${prefix}/GITHUB_SECRET`,
+  ];
 
-  const client = new SecretsManagerClient({
+  const client = new SSMClient({
     region: process.env.AWS_REGION || "us-east-1",
   });
 
   const response = await client.send(
-    new GetSecretValueCommand({
-      SecretId: secretId,
+    new GetParametersCommand({
+      Names: parameterNames,
+      WithDecryption: true,
     })
   );
 
-  const secrets = JSON.parse(response.SecretString);
-
-  for (const [key, value] of Object.entries(secrets)) {
-    process.env[key] = value;
+  if (response.InvalidParameters?.length) {
+    throw new Error(
+      `Missing SSM parameters: ${response.InvalidParameters.join(", ")}`
+    );
   }
 
-  console.log("Secrets loaded from AWS Secrets Manager");
+  for (const parameter of response.Parameters ?? []) {
+    const envName = parameter.Name.split("/").pop();
+
+    if (!envName || !parameter.Value) {
+      continue;
+    }
+
+    process.env[envName] = parameter.Value;
+  }
+
+  console.log("Loaded application configuration from SSM Parameter Store");
 
   const child = spawn(
     "node",
@@ -40,7 +60,7 @@ async function main() {
   });
 }
 
-main().catch((err) => {
-  console.error("Failed to load application secrets:", err);
+main().catch((error) => {
+  console.error("Failed to load SSM parameters:", error);
   process.exit(1);
 });
