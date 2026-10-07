@@ -80,7 +80,6 @@ export default function HeroCarousel({
               className="absolute inset-0 h-full w-full object-cover"
             />
 
-            {/* Dark area for readable copy */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/35 to-transparent" />
 
             <div className="relative z-10 flex h-full items-center">
@@ -92,7 +91,7 @@ export default function HeroCarousel({
                     </p>
                   )}
 
-                  <h1 className="max-w-[680px] text-4xl font-black leading-[0.95] tracking-tight text-white md:text-6xl lg:text-[72px]">
+                  <h1 className="max-w-[680px] text-3xl font-black leading-[0.95] tracking-tight text-white md:text-5xl lg:text-[64px]">
                     {slide.title}
                   </h1>
 
@@ -102,9 +101,7 @@ export default function HeroCarousel({
                         key={`${index}-${link.label}`}
                         href={link.href}
                         className="inline-flex min-h-[44px] items-center bg-black/80 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-black"
-                        tabIndex={
-                          index === current ? 0 : -1
-                        }
+                        tabIndex={index === current ? 0 : -1}
                       >
                         {link.label}
                         <span
@@ -189,9 +186,7 @@ export default function HeroCarousel({
                 }`}
                 aria-label={`Show slide ${index + 1}`}
                 aria-current={
-                  index === current
-                    ? 'true'
-                    : undefined
+                  index === current ? 'true' : undefined
                 }
               />
             ))}

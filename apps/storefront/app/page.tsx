@@ -13,7 +13,7 @@ export default async function Home() {
     {
       name: 'Men',
       slug: 'men',
-      img: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=1200&auto=format&fit=crop&q=85',
+      img: 'https://assets.mavencrest.site/mansurf.avif',
     },
     {
       name: 'Women',
@@ -28,12 +28,12 @@ export default async function Home() {
     {
       name: 'Running',
       slug: 'running',
-      img: 'https://d1jpqk4gnxzbj2.cloudfront.net/trackpic.png',
+      img: 'https://assets.mavencrest.site/trackpic.png',
     },
     {
       name: 'Nutrition',
       slug: 'nutrition',
-      img: 'https://d1jpqk4gnxzbj2.cloudfront.net/nutrition.png',
+      img: 'https://assets.mavencrest.site/nutrition.png',
     },
   ]
 
@@ -48,7 +48,7 @@ export default async function Home() {
    */
   const heroSlides = [
     {
-      image: '/madrid.jpeg',
+      image: 'https://assets.mavencrest.site/kidhome.png',
       eyebrow: 'Seasonal essentials for every training day.',
       title: 'Fall-Ready Energy',
       links: [
@@ -71,7 +71,7 @@ export default async function Home() {
       ],
     },
     {
-      image: 'https://d1jpqk4gnxzbj2.cloudfront.net/trackpic.png',
+      image: 'https://assets.mavencrest.site/trackpic.png',
       eyebrow: 'Built for every mile.',
       title: 'Run Without Limits',
       links: [
@@ -101,13 +101,28 @@ export default async function Home() {
       ],
     },
     {
-      image: 'https://d1jpqk4gnxzbj2.cloudfront.net/nutrition.png',
+      image: 'https://assets.mavencrest.site/nutrition.png',
       eyebrow: 'Fuel the work.',
       title: 'Train. Recover. Repeat.',
       links: [
         {
           label: 'Shop Nutrition',
           href: '/products?category=nutrition',
+        },
+        {
+          label: 'Shop All',
+          href: '/products',
+        },
+      ],
+    },
+    {
+      image: 'https://assets.mavencrest.site/mansurf.avif',
+      eyebrow: 'In Constant Motion .',
+      title: 'Work Hard, Play Hard.',
+      links: [
+        {
+          label: 'Shop Men',
+          href: '/products?category=men',
         },
         {
           label: 'Shop All',
