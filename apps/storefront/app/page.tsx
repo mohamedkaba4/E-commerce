@@ -18,7 +18,7 @@ export default async function Home() {
     {
       name: 'Women',
       slug: 'women',
-      img: '/wsoccer.jpg',
+      img: 'https://assets.mavencrest.site/wsoccer.png',
     },
     {
       name: 'Kids',
@@ -50,7 +50,7 @@ export default async function Home() {
     {
       image: 'https://assets.mavencrest.site/kidhome.png',
       eyebrow: 'Seasonal essentials for every training day.',
-      title: 'Fall-Ready Energy',
+      title: 'FALL READY ENERGY',
       links: [
         {
           label: 'Shop All',
@@ -73,7 +73,7 @@ export default async function Home() {
     {
       image: 'https://assets.mavencrest.site/trackpic.png',
       eyebrow: 'Built for every mile.',
-      title: 'Run Without Limits',
+      title: 'RUN WITHOUT LIMITS',
       links: [
         {
           label: 'Shop Running',
@@ -86,9 +86,9 @@ export default async function Home() {
       ],
     },
     {
-      image: '/wsoccer.jpg',
+      image: 'https://assets.mavencrest.site/wsoccer.png',
       eyebrow: 'Made to move.',
-      title: 'Own The Moment',
+      title: 'OWN THE MOMENT',
       links: [
         {
           label: 'Shop Women',
@@ -103,7 +103,7 @@ export default async function Home() {
     {
       image: 'https://assets.mavencrest.site/nutrition.png',
       eyebrow: 'Fuel the work.',
-      title: 'Train. Recover. Repeat.',
+      title: 'TRAIN, RECOVER, REPEAT.',
       links: [
         {
           label: 'Shop Nutrition',
@@ -117,8 +117,8 @@ export default async function Home() {
     },
     {
       image: 'https://assets.mavencrest.site/mansurf.avif',
-      eyebrow: 'In Constant Motion .',
-      title: 'Work Hard, Play Hard.',
+      eyebrow: 'In constant motion.',
+      title: 'WORK HARD, PLAY HARD.',
       links: [
         {
           label: 'Shop Men',

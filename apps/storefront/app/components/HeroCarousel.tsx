@@ -2,12 +2,18 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { Bebas_Neue } from 'next/font/google'
 import {
   ChevronLeft,
   ChevronRight,
   Pause,
   Play,
 } from 'lucide-react'
+
+const bebas = Bebas_Neue({
+  subsets: ['latin'],
+  weight: '400',
+})
 
 export interface HeroSlide {
   image: string
@@ -84,14 +90,22 @@ export default function HeroCarousel({
 
             <div className="relative z-10 flex h-full items-center">
               <div className="w-full max-w-[1600px] px-6 md:px-10 lg:px-14">
-                <div className="max-w-[680px]">
+                <div
+                  className={`max-w-[680px] ${
+                    slide.title === 'RUN WITHOUT LIMITS'
+                      ? 'translate-y-16 md:translate-y-24'
+                      : ''
+                  }`}
+                >
                   {slide.eyebrow && (
                     <p className="mb-4 text-sm font-medium tracking-wide text-white/90 md:text-base">
                       {slide.eyebrow}
                     </p>
                   )}
 
-                  <h1 className="max-w-[680px] text-3xl font-black leading-[0.95] tracking-tight text-white md:text-5xl lg:text-[64px]">
+                  <h1
+                    className={`${bebas.className} max-w-[680px] text-4xl uppercase leading-[0.9] tracking-[0.015em] text-white sm:text-5xl md:text-6xl lg:text-[68px]`}
+                  >
                     {slide.title}
                   </h1>
 
@@ -104,12 +118,6 @@ export default function HeroCarousel({
                         tabIndex={index === current ? 0 : -1}
                       >
                         {link.label}
-                        <span
-                          aria-hidden="true"
-                          className="ml-2 text-lg leading-none"
-                        >
-                          →
-                        </span>
                       </Link>
                     ))}
                   </div>
