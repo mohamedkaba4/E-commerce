@@ -69,7 +69,7 @@ export default function Navbar() {
       </div>
 
       {/* Main Navigation */}
-      <div className="border-b border-neutral-200 bg-white text-black">
+      <div className="border-b border-white/5 bg-[#1d1f1f] text-white">
         <div className="mx-auto flex h-[72px] max-w-[1600px] items-center px-4 sm:px-6 lg:px-8 xl:px-12">
           {/* Logo */}
           <Link
@@ -91,10 +91,10 @@ export default function Navbar() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className={`relative flex h-full items-center text-[14px] font-semibold transition-colors after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-0 after:bg-black after:transition-all hover:after:w-full ${
+                  className={`relative flex h-full items-center text-[14px] font-semibold transition-colors after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-0 after:bg-white after:transition-all hover:after:w-full ${
                     link.label === 'Sale'
                       ? 'text-red-600'
-                      : 'text-black'
+                      : 'text-white'
                   }`}
                 >
                   {link.label}
@@ -115,7 +115,7 @@ export default function Navbar() {
                 type="search"
                 name="q"
                 placeholder="Search"
-                className="h-10 w-[220px] border-b border-neutral-500 bg-transparent pl-1 pr-9 text-sm text-black outline-none placeholder:text-neutral-500 transition-colors focus:border-black"
+                className="h-10 w-[220px] border-b border-neutral-600 bg-transparent pl-1 pr-9 text-sm text-white outline-none placeholder:text-neutral-500 transition-colors focus:border-white"
               />
 
               <Search
@@ -127,7 +127,7 @@ export default function Navbar() {
             {/* Tablet Search Icon */}
             <Link
               href="/products"
-              className="hidden h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 md:flex xl:hidden"
+              className="hidden h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white/10 md:flex xl:hidden"
               aria-label="Search products"
             >
               <Search
@@ -142,7 +142,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setMenuOpen(!menuOpen)}
-              className="ml-1 flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 lg:hidden"
+              className="ml-1 flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white/10 lg:hidden"
               aria-label="Toggle navigation"
             >
               {menuOpen ? (
@@ -162,19 +162,19 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="border-t border-neutral-200 bg-white lg:hidden">
+          <div className="border-t border-white/10 bg-[#1d1f1f] text-white lg:hidden">
             {/* Mobile Search */}
             <form
               action="/products"
               method="GET"
-              className="border-b border-neutral-200 p-4"
+              className="border-b border-white/10 p-4"
             >
               <div className="relative">
                 <input
                   type="search"
                   name="q"
                   placeholder="Search Mavencrest"
-                  className="h-12 w-full bg-neutral-100 px-4 pr-11 text-sm outline-none placeholder:text-neutral-500"
+                  className="h-12 w-full bg-[#151515] px-4 pr-11 text-sm text-white outline-none placeholder:text-neutral-500"
                 />
 
                 <Search
@@ -191,10 +191,10 @@ export default function Navbar() {
                   key={link.label}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className={`flex min-h-[54px] items-center border-b border-neutral-100 px-5 text-base font-semibold ${
+                  className={`flex min-h-[54px] items-center border-b border-white/10 px-5 text-base font-semibold ${
                     link.label === 'Sale'
                       ? 'text-red-600'
-                      : 'text-black'
+                      : 'text-white'
                   }`}
                 >
                   {link.label}
@@ -202,7 +202,7 @@ export default function Navbar() {
               ))}
             </nav>
 
-            <div className="flex gap-6 px-5 py-5 text-sm text-neutral-600">
+            <div className="flex gap-6 px-5 py-5 text-sm text-neutral-400">
               <Link
                 href="/support"
                 onClick={() => setMenuOpen(false)}

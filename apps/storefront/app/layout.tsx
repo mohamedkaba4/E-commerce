@@ -12,8 +12,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'MAVENCREST',
-    template: '%s | MAVENCREST',
+    default: 'Mavencrest',
+    template: '%s | Mavencrest',
   },
   description:
     'Performance gear for training, running and everyday movement.',

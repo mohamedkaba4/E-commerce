@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+
+.next
+**/.next
+
+.git
+.gitignore
+
+npm-debug.log*
+
+# Lambda standalone artifact must be copied completely
+!app/
+!app/**

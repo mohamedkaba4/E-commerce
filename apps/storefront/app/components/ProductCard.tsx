@@ -126,7 +126,7 @@ export default function ProductCard({
       className="group block"
     >
       <div
-        className="relative aspect-[4/5] overflow-hidden bg-[#f4f4f4]"
+        className="relative aspect-[4/5] overflow-hidden bg-[#242626]"
         onMouseEnter={() =>
           productImages[1] &&
           setImgIdx(1)
@@ -139,7 +139,7 @@ export default function ProductCard({
           src={primaryImage}
           alt={product.name}
           fill
-          className="object-contain p-5 transition-transform duration-500 group-hover:scale-[1.03]"
+          className="object-contain p-8 transition-transform duration-500 group-hover:scale-[1.03]"
           sizes="(max-width: 768px) 85vw, (max-width: 1200px) 45vw, 25vw"
           unoptimized
         />
