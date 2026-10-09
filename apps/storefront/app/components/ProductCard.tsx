@@ -2,11 +2,9 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
-import { Heart } from 'lucide-react'
+import { useState } from 'react'
 
 import { useCart } from '@/store/useCart'
-import { useFavorites } from '@/store/useFavorites'
 import type { Product } from '@/types'
 
 interface ProductCardProps {
@@ -18,33 +16,14 @@ interface ProductCardProps {
 export default function ProductCard({
   product,
 }: ProductCardProps) {
-  const [imgIdx, setImgIdx] =
-    useState(0)
-
-  const [mounted, setMounted] =
-    useState(false)
+  const [imgIdx, setImgIdx] = useState(0)
 
   const { addToCart } = useCart()
-
-  const favorites = useFavorites(
-    (state) => state.favorites
-  )
-
-  const toggleFavorite =
-    useFavorites(
-      (state) =>
-        state.toggleFavorite
-    )
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const discount =
     product.compareAt
       ? Math.round(
-          ((product.compareAt -
-            product.price) /
+          ((product.compareAt - product.price) /
             product.compareAt) *
             100
         )
@@ -61,39 +40,10 @@ export default function ProductCard({
     productImages[0] ||
     'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900&auto=format&fit=crop&q=85'
 
-  const favorite =
-    mounted &&
-    favorites.some(
-      (item) =>
-        item.id === product.id
-    )
-
   const categoryName =
-    typeof product.category ===
-    'string'
+    typeof product.category === 'string'
       ? product.category
       : product.category?.name
-
-  const handleFavorite = (
-    event: React.MouseEvent
-  ) => {
-    event.preventDefault()
-    event.stopPropagation()
-
-    toggleFavorite({
-      id: product.id,
-      name: product.name,
-      slug:
-        product.slug ||
-        'product-slug',
-      price: product.price,
-      compareAt:
-        product.compareAt,
-      imageUrl:
-        productImages[0] || '',
-      category: categoryName,
-    })
-  }
 
   const handleQuickAdd = (
     event: React.MouseEvent
@@ -144,27 +94,6 @@ export default function ProductCard({
           unoptimized
         />
 
-        {/* Favorite */}
-        <button
-          type="button"
-          onClick={handleFavorite}
-          className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-sm transition hover:scale-105"
-          aria-label={
-            favorite
-              ? 'Remove from favorites'
-              : 'Add to favorites'
-          }
-        >
-          <Heart
-            className={`h-5 w-5 ${
-              favorite
-                ? 'fill-black'
-                : ''
-            }`}
-            strokeWidth={1.8}
-          />
-        </button>
-
         {/* Badges */}
         <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
           {discount && (
@@ -208,25 +137,21 @@ export default function ProductCard({
           </span>
 
           {product.compareAt && (
-            <span className="text-sm text-neutral-500 line-through">
-              $
-              {product.compareAt.toFixed(
-                2
-              )}
+            <span className="text-sm text-neutral-600 line-through">
+              ${product.compareAt.toFixed(2)}
             </span>
           )}
         </div>
 
-        {product.colors?.length >
-          0 && (
-          <p className="mt-2 text-xs text-neutral-500">
-            {product.colors.length}{' '}
-            {product.colors
-              .length === 1
-              ? 'Color'
-              : 'Colors'}
-          </p>
-        )}
+        {product.colors &&
+          product.colors.length > 0 && (
+            <p className="mt-2 text-xs text-neutral-600">
+              {product.colors.length}{' '}
+              {product.colors.length === 1
+                ? 'Color'
+                : 'Colors'}
+            </p>
+          )}
       </div>
     </Link>
   )

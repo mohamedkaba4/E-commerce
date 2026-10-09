@@ -1,14 +1,8 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 
 import { Providers } from '@/app/components/Providers'
 import Navbar from '@/app/components/Navbar'
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: {
@@ -26,9 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.className} min-h-screen bg-black antialiased`}
-      >
+      <body className="min-h-screen bg-black antialiased">
         <Providers>
           <Navbar />
 
