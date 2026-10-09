@@ -415,3 +415,103 @@ stages:
                 echo "Production deployment verified."
                 echo "Storefront: $STORE_NEW"
                 echo "Admin: $ADMIN_NEW"
+
+- stage: UpdateKubernetes
+  displayName: Update Kubernetes Release in Git
+  dependsOn: DeployProd
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+
+  jobs:
+  - job: UpdateManifest
+    displayName: Update DockingStation Manifest
+    steps:
+    - checkout: none
+
+    - bash: |
+        set -euo pipefail
+        umask 077
+
+        WORK_DIR=$(mktemp -d)
+        trap 'rm -rf "$WORK_DIR"' EXIT
+
+        # Let Git authenticate using the secret environment variable.
+        cat > "$WORK_DIR/askpass" <<'EOF'
+        #!/bin/sh
+        case "$1" in
+          *Username*) printf '%s\n' 'mohamedkaba4' ;;
+          *Password*) printf '%s\n' "$DOCKINGSTATION_TOKEN" ;;
+          *) exit 1 ;;
+        esac
+        EOF
+        chmod 700 "$WORK_DIR/askpass"
+
+        export GIT_ASKPASS="$WORK_DIR/askpass"
+        export GIT_TERMINAL_PROMPT=0
+
+        git -c credential.helper= clone --branch main --single-branch \
+          https://github.com/mohamedkaba4/Kubernetes-DockingStation.git \
+          "$WORK_DIR/repo"
+
+        cd "$WORK_DIR/repo"
+        git config user.name "Mavencrest CI"
+        git config user.email "mavencrest-ci@users.noreply.github.com"
+
+        # Retry if another commit reaches main before our push.
+        for attempt in 1 2 3; do
+          git fetch origin main
+          git reset --hard origin/main
+
+          python3 - <<'PY'
+        import os
+        import re
+        from pathlib import Path
+
+        path = Path("apps/mavencrest/storefront.yaml")
+        text = path.read_text()
+        repository = f"{os.environ['ACR_SERVER']}/{os.environ['IMAGE_NAME']}"
+        tag = os.environ["IMAGE_TAG"]
+
+        if not tag.isdecimal():
+            raise SystemExit("Expected a numeric Build.BuildId image tag")
+
+        pattern = re.compile(
+            r"^(\s*image:\s*)" + re.escape(repository)
+            + r":([A-Za-z0-9_.-]+)([ \t]*)$",
+            re.MULTILINE,
+        )
+        matches = list(pattern.finditer(text))
+        if len(matches) != 1:
+            raise SystemExit("Expected exactly one storefront image reference")
+
+        current = matches[0].group(2)
+        if current.isdecimal() and int(current) > int(tag):
+            raise SystemExit("Refusing to overwrite a newer release")
+
+        updated = pattern.sub(
+            lambda m: f"{m.group(1)}{repository}:{tag}{m.group(3)}",
+            text,
+        )
+        path.write_text(updated)
+        PY
+
+          if git diff --quiet; then
+            echo "Manifest already references this release."
+            exit 0
+          fi
+
+          git add apps/mavencrest/storefront.yaml
+          git commit -m "Deploy storefront image ${IMAGE_TAG} to Kubernetes"
+
+          if git -c credential.helper= push origin HEAD:main; then
+            exit 0
+          fi
+        done
+
+        echo "Could not push the manifest update after three attempts."
+        exit 1
+      displayName: Commit and Push Storefront Image Version
+      env:
+        DOCKINGSTATION_TOKEN: $(dockingstationToken)
+        ACR_SERVER: $(acrLoginServer)
+        IMAGE_NAME: $(storefrontImageName)
+        IMAGE_TAG: $(imageTag) 
