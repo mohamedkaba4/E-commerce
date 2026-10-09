@@ -80,37 +80,66 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
+          set -euo pipefail
           az acr login --name $(acrName)
 
-    # INSTALL TRIVY SCANNER
-    - script: |
-        echo "Installing Trivy Vulnerability Scanner..."
-        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    - task: CmdLine@2
       displayName: Install Trivy
+      inputs:
+        script: |
+          set -euo pipefail
+          curl -sfL \
+            https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
 
-    # STOREFRONT: BUILD -> SCAN -> PUSH
-    - script: |
-        docker pull $(acrLoginServer)/$(storefrontImageName):latest || true
-        docker build \
-          --platform linux/amd64 \
-          --cache-from $(acrLoginServer)/$(storefrontImageName):latest \
-          -f apps/storefront/Dockerfile \
-          -t $(acrLoginServer)/$(storefrontImageName):$(imageTag) \
-          -t $(acrLoginServer)/$(storefrontImageName):latest \
-          .
-      displayName: Build Storefront Docker Image (Cached)
+    - task: CmdLine@2
+      displayName: Set Up Multi-Platform Builder
+      inputs:
+        script: |
+          set -euo pipefail
 
-    - script: |
-        trivy image --severity HIGH,CRITICAL --exit-code 0 $(acrLoginServer)/$(storefrontImageName):$(imageTag)
-      displayName: Scan Storefront Image with Trivy
+          docker run --privileged --rm tonistiigi/binfmt --install arm64
 
-    - script: |
-        docker push $(acrLoginServer)/$(storefrontImageName):$(imageTag)
-        docker push $(acrLoginServer)/$(storefrontImageName):latest
-      displayName: Push Storefront Image & Cache Tag to ACR
+          docker buildx create \
+            --name mavencrest-multi \
+            --driver docker-container \
+            --use
+
+          docker buildx inspect --bootstrap
+
+    - task: CmdLine@2
+      displayName: Build and Push Storefront AMD64 and ARM64
+      inputs:
+        script: |
+          set -euo pipefail
+
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --file apps/storefront/Dockerfile \
+            --tag $(acrLoginServer)/$(storefrontImageName):$(imageTag) \
+            --cache-from type=registry,ref=$(acrLoginServer)/$(storefrontImageName):buildcache \
+            --cache-to type=registry,ref=$(acrLoginServer)/$(storefrontImageName):buildcache,mode=max \
+            --push \
+            .
+
+    - task: CmdLine@2
+      displayName: Scan Both Storefront Architectures
+      inputs:
+        script: |
+          set -euo pipefail
+
+          for platform in linux/amd64 linux/arm64; do
+            trivy image \
+              --platform "$platform" \
+              --severity HIGH,CRITICAL \
+              --exit-code 0 \
+              $(acrLoginServer)/$(storefrontImageName):$(imageTag)
+          done
 
     # ADMIN: BUILD -> SCAN -> PUSH
     - script: |
+        set -euo pipefail
+        
         docker pull $(acrLoginServer)/$(adminImageName):latest || true
         docker build \
           --platform linux/amd64 \
@@ -222,380 +251,167 @@ stages:
 
   jobs:
   - deployment: Deploy
-    displayName: Deploy Container Apps
+    displayName: Deploy and Verify Production
     environment: Prod
-
     strategy:
       runOnce:
         deploy:
           steps:
-
           - task: AzureCLI@2
-            displayName: Deploy Production with Automatic Rollback
+            displayName: Deploy with Verified Rollback
             inputs:
               azureSubscription: '$(prodConnection)'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
-                set -e
+                set -euo pipefail
 
-                echo "=========================================="
-                echo "CAPTURING CURRENT PRODUCTION REVISIONS"
-                echo "=========================================="
+                RG="$(prodResourceGroup)"
+                STORE="$(storefrontContainerApp)"
+                ADMIN="$(adminContainerApp)"
+                SUFFIX="b$(Build.BuildId)-a$(System.JobAttempt)"
+                STORE_NEW="${STORE}--${SUFFIX}"
+                ADMIN_NEW="${ADMIN}--${SUFFIX}"
 
-                STORE_GOOD_REV=$(az containerapp show \
-                  --name $(storefrontContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --query "properties.latestRevisionName" \
-                  -o tsv)
+                # Require exactly one revision serving 100% traffic.
+                current_revision() {
+                  local app="$1"
+                  local revisions count
+                  revisions=$(az containerapp revision list \
+                    --name "$app" --resource-group "$RG" -o json)
 
-                ADMIN_GOOD_REV=$(az containerapp show \
-                  --name $(adminContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --query "properties.latestRevisionName" \
-                  -o tsv)
+                  count=$(jq '[.[] | select(.properties.trafficWeight > 0)] | length' \
+                    <<< "$revisions")
 
-                 echo "Previous Storefront revision: $STORE_GOOD_REV"
-                 echo "Previous Admin revision:      $ADMIN_GOOD_REV"
-
-                 if [ -z "$STORE_GOOD_REV" ]; then
-                  echo "ERROR: Could not determine current Storefront revision."
-                  exit 1
-                fi
-
-                if [ -z "$ADMIN_GOOD_REV" ]; then
-                  echo "ERROR: Could not determine current Admin revision."
-                  exit 1
-                fi
-
-
-                echo "=========================================="
-                echo "DEPLOYING NEW PRODUCTION REVISIONS"
-                echo "=========================================="
-
-                az containerapp update \
-                  --name $(storefrontContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --image $(acrLoginServer)/$(storefrontImageName):$(imageTag)
-
-                az containerapp update \
-                  --name $(adminContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --image $(acrLoginServer)/$(adminImageName):$(imageTag)
-
-
-                echo "=========================================="
-                echo "DETERMINING NEW REVISIONS"
-                echo "=========================================="
-
-                STORE_NEW_REV=$(az containerapp revision list \
-                  --name $(storefrontContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --query "sort_by(@, &properties.createdTime)[-1].name" \
-                  -o tsv)
-
-                ADMIN_NEW_REV=$(az containerapp revision list \
-                  --name $(adminContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --query "sort_by(@, &properties.createdTime)[-1].name" \
-                  -o tsv)
-
-                echo "New Storefront revision: $STORE_NEW_REV"
-                echo "New Admin revision:      $ADMIN_NEW_REV"
-
-
-                echo "=========================================="
-                echo "WAITING FOR NEW REVISIONS"
-                echo "=========================================="
-
-                echo "Waiting for Storefront revision..."
-                for i in {1..30}; do
-
-                  STORE_STATE=$(az containerapp revision show \
-                    --name $(storefrontContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$STORE_NEW_REV" \
-                    --query "properties.runningState" \
-                    -o tsv)
-
-                  echo "Storefront state: $STORE_STATE"
-
-                  if [ "$STORE_STATE" = "Running" ]; then
-                    break
+                  if [ "$count" != "1" ]; then
+                    echo "Expected one live revision for $app; found $count." >&2
+                    return 1
                   fi
 
-                  if [ "$STORE_STATE" = "Failed" ]; then
-                    echo "Storefront revision failed to start."
-                    break
-                  fi
+                  jq -er \
+                    '.[] | select(.properties.trafficWeight == 100) | .name' \
+                    <<< "$revisions"
+                }
 
-                  sleep 10
-                done
-
-
-                echo "Waiting for Admin revision..."
-                for i in {1..30}; do
-
-                  ADMIN_STATE=$(az containerapp revision show \
-                    --name $(adminContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$ADMIN_NEW_REV" \
-                    --query "properties.runningState" \
-                    -o tsv)
-
-                  echo "Admin state: $ADMIN_STATE"
-
-                  if [ "$ADMIN_STATE" = "Running" ]; then
-                    break
-                  fi
-
-                  if [ "$ADMIN_STATE" = "Failed" ]; then
-                    echo "Admin revision failed to start."
-                    break
-                  fi
-
-                  sleep 10
-                done
-
-                  if [ "$STORE_STATE" != "Running" ] || [ "$ADMIN_STATE" != "Running" ]; then
-                  echo "ERROR: One or more new revisions failed to reach Running state."
-
-                  STORE_STATUS="000"
-                  ADMIN_STATUS="000"
-
-                else
-
-                  echo "=========================================="
-                  echo "TESTING NEW REVISIONS DIRECTLY"
-                  echo "=========================================="
-
-                  STORE_NEW_FQDN=$(az containerapp revision show \
-                    --name $(storefrontContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$STORE_NEW_REV" \
-                    --query "properties.fqdn" \
-                    -o tsv)
-
-                  ADMIN_NEW_FQDN=$(az containerapp revision show \
-                    --name $(adminContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$ADMIN_NEW_REV" \
-                    --query "properties.fqdn" \
-                    -o tsv)
-
-                  echo "Storefront revision: $STORE_NEW_FQDN"
-                  echo "Admin revision:      $ADMIN_NEW_FQDN"
-
-                  STORE_STATUS=$(curl \
-                    -L \
-                    --write-out "%{http_code}" \
-                    --silent \
-                    --output /dev/null \
-                    --retry 3 \
-                    --retry-delay 5 \
-                    "https://$STORE_NEW_FQDN/api/health" || true)
-
-                  ADMIN_STATUS=$(curl \
-                    -L \
-                    --write-out "%{http_code}" \
-                    --silent \
-                    --output /dev/null \
-                    --retry 3 \
-                    --retry-delay 5 \
-                    "https://$ADMIN_NEW_FQDN/api/health" || true)
-
-                fi
-
-                echo "New Storefront revision status: $STORE_STATUS"
-                echo "New Admin revision status:      $ADMIN_STATUS"
-
-
-                if [ "$STORE_STATUS" != "200" ] || [ "$ADMIN_STATUS" != "200" ]; then
-
-                  echo "=========================================="
-                  echo "NEW REVISION HEALTH CHECK FAILED"
-                  echo "ROLLING BACK"
-                  echo "=========================================="
-
-                  echo "Activating previous Storefront revision..."
-                  az containerapp revision activate \
-                    --name $(storefrontContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$STORE_GOOD_REV"
-
-                  echo "Activating previous Admin revision..."
-                  az containerapp revision activate \
-                    --name $(adminContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$ADMIN_GOOD_REV"
-
-
-                  echo "=========================================="
-                  echo "RESTORING PRODUCTION TRAFFIC"
-                  echo "=========================================="
-
+                set_traffic() {
                   az containerapp ingress traffic set \
-                    --name $(storefrontContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision-weight "$STORE_GOOD_REV=100"
+                    --name "$1" \
+                    --resource-group "$RG" \
+                    --revision-weight "$2=100" \
+                    --output none
+                }
 
-                  az containerapp ingress traffic set \
-                    --name $(adminContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision-weight "$ADMIN_GOOD_REV=100"
+                # Retry exact HTTP 200 checks with bounded request time.
+                check_health() {
+                  local url="$1" code
+                  for attempt in {1..30}; do
+                    code=$(curl --silent --show-error \
+                      --connect-timeout 10 --max-time 20 \
+                      --output /dev/null --write-out '%{http_code}' \
+                      "$url") || code="000"
 
-                  echo "Waiting for rollback traffic..."
-                  sleep 15
-
-
-                  echo "=========================================="
-                  echo "VERIFYING ROLLBACK"
-                  echo "=========================================="
-
-                  STORE_ROLLBACK_STATUS=$(curl \
-                    -L \
-                    --write-out "%{http_code}" \
-                    --silent \
-                    --output /dev/null \
-                    --retry 5 \
-                    --retry-delay 5 \
-                    "https://store.az.mavencrest.site/api/health" || true)
-
-                  ADMIN_ROLLBACK_STATUS=$(curl \
-                    -L \
-                    --write-out "%{http_code}" \
-                    --silent \
-                    --output /dev/null \
-                    --retry 5 \
-                    --retry-delay 5 \
-                    "https://admin.az.mavencrest.site/api/health" || true)
-
-                  echo "Storefront after rollback: $STORE_ROLLBACK_STATUS"
-                  echo "Admin after rollback:      $ADMIN_ROLLBACK_STATUS"
-
-
-                  if [ "$STORE_ROLLBACK_STATUS" = "200" ] && \
-                     [ "$ADMIN_ROLLBACK_STATUS" = "200" ]; then
-
-                    echo "=========================================="
-                    echo "ROLLBACK VERIFIED"
-                    echo "PRODUCTION IS HEALTHY"
-                    echo "=========================================="
-
-                    if [ "$STORE_NEW_REV" != "$STORE_GOOD_REV" ]; then
-                      az containerapp revision deactivate \
-                        --name $(storefrontContainerApp) \
-                        --resource-group $(prodResourceGroup) \
-                        --revision "$STORE_NEW_REV"
+                    if [ "$code" = "200" ]; then
+                      echo "Healthy: $url"
+                      return 0
                     fi
 
-                    if [ "$ADMIN_NEW_REV" != "$ADMIN_GOOD_REV" ]; then
-                      az containerapp revision deactivate \
-                        --name $(adminContainerApp) \
-                        --resource-group $(prodResourceGroup) \
-                        --revision "$ADMIN_NEW_REV" 
-                    fi
+                    echo "Health attempt $attempt: HTTP $code"
+                    sleep 10
+                  done
+                  return 1
+                }
 
+                revision_url() {
+                  local fqdn
+                  fqdn=$(az containerapp revision show \
+                    --name "$1" \
+                    --resource-group "$RG" \
+                    --revision "$2" \
+                    --query properties.fqdn -o tsv)
+
+                  if [ -z "$fqdn" ] || [ "$fqdn" = "None" ]; then
+                    return 1
+                  fi
+                  printf 'https://%s/api/health' "$fqdn"
+                }
+
+                STORE_GOOD=$(current_revision "$STORE")
+                ADMIN_GOOD=$(current_revision "$ADMIN")
+
+                echo "Current storefront: $STORE_GOOD"
+                echo "Current admin: $ADMIN_GOOD"
+
+                # Confirm the baseline is healthy before changing anything.
+                check_health "https://store.az.mavencrest.site/api/health"
+                check_health "https://admin.az.mavencrest.site/api/health"
+
+                # Restore both apps on any subsequent script failure.
+                rollback_on_exit() {
+                  local status=$?
+                  trap - EXIT
+
+                  if [ "$status" -eq 0 ]; then
+                    return
+                  fi
+
+                  set +e
+                  echo "Deployment failed. Restoring previous traffic."
+
+                  local rollback_failed=0
+                  set_traffic "$STORE" "$STORE_GOOD" || rollback_failed=1
+                  set_traffic "$ADMIN" "$ADMIN_GOOD" || rollback_failed=1
+
+                  check_health "https://store.az.mavencrest.site/api/health" \
+                    || rollback_failed=1
+                  check_health "https://admin.az.mavencrest.site/api/health" \
+                    || rollback_failed=1
+
+                  if [ "$rollback_failed" -eq 0 ]; then
+                    echo "Rollback verified. Previous releases are serving."
                   else
-
-                    echo "=========================================="
-                    echo "CRITICAL: ROLLBACK FAILED"
-                    echo "PRODUCTION IS STILL UNHEALTHY"
-                    echo "=========================================="
-
+                    echo "ERROR: Rollback could not be fully verified."
                   fi
 
-                  exit 1
-                fi
+                  exit "$status"
+                }
+                trap rollback_on_exit EXIT
 
+                # Replace any 'latest revision' rule with explicit revisions.
+                set_traffic "$STORE" "$STORE_GOOD"
+                set_traffic "$ADMIN" "$ADMIN_GOOD"
 
-                echo "=========================================="
-                echo "NEW REVISIONS PASSED - PROMOTING TO PROD"
-                echo "=========================================="
+                # Create named candidate revisions; keep current traffic pinned.
+                az containerapp update \
+                  --name "$STORE" \
+                  --resource-group "$RG" \
+                  --container-name storefront \
+                  --image "$(acrLoginServer)/$(storefrontImageName):$(imageTag)" \
+                  --revision-suffix "$SUFFIX" \
+                  --output none
 
-                az containerapp ingress traffic set \
-                  --name $(storefrontContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --revision-weight "$STORE_NEW_REV=100"
+                az containerapp update \
+                  --name "$ADMIN" \
+                  --resource-group "$RG" \
+                  --container-name admin \
+                  --image "$(acrLoginServer)/$(adminImageName):$(imageTag)" \
+                  --revision-suffix "$SUFFIX" \
+                  --output none
 
-                az containerapp ingress traffic set \
-                  --name $(adminContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --revision-weight "$ADMIN_NEW_REV=100"
+                # Test candidates directly, including scale-from-zero startup.
+                STORE_URL=$(revision_url "$STORE" "$STORE_NEW")
+                ADMIN_URL=$(revision_url "$ADMIN" "$ADMIN_NEW")
 
-                echo "Waiting for production traffic..."
-                sleep 15
+                check_health "$STORE_URL"
+                check_health "$ADMIN_URL"
 
+                # Promote only after both candidates pass.
+                set_traffic "$STORE" "$STORE_NEW"
+                set_traffic "$ADMIN" "$ADMIN_NEW"
 
-                echo "=========================================="
-                echo "VERIFYING PRODUCTION"
-                echo "=========================================="
+                # A failed public check also triggers rollback.
+                check_health "https://store.az.mavencrest.site/api/health"
+                check_health "https://admin.az.mavencrest.site/api/health"
 
-                STORE_PROD_STATUS=$(curl \
-                  -L \
-                  --write-out "%{http_code}" \
-                  --silent \
-                  --output /dev/null \
-                  --retry 5 \
-                  --retry-delay 5 \
-                  "https://store.az.mavencrest.site/api/health" || true)
-
-                ADMIN_PROD_STATUS=$(curl \
-                  -L \
-                  --write-out "%{http_code}" \
-                  --silent \
-                  --output /dev/null \
-                  --retry 5 \
-                  --retry-delay 5 \
-                  "https://admin.az.mavencrest.site/api/health" || true)
-
-                echo "Production Storefront: $STORE_PROD_STATUS"
-                echo "Production Admin:      $ADMIN_PROD_STATUS"
-
-
-                if [ "$STORE_PROD_STATUS" != "200" ] || [ "$ADMIN_PROD_STATUS" != "200" ]; then
-                  echo "ERROR: Production verification failed after promotion."
-                  exit 1
-                fi
-
-                echo "=========================================="
-                echo "CLEANING UP OLD ACTIVE REVISIONS"
-                echo "=========================================="
-
-                STORE_OLD_REVISIONS=$(az containerapp revision list \
-                  --name $(storefrontContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --query "[?properties.active==\`true\` && name!='${STORE_NEW_REV}'].name" \
-                  -o tsv)
-
-                for REV in $STORE_OLD_REVISIONS; do
-                  echo "Deactivating old Storefront revision: $REV"
-
-                  az containerapp revision deactivate \
-                    --name $(storefrontContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$REV"
-                done
-
-
-                ADMIN_OLD_REVISIONS=$(az containerapp revision list \
-                  --name $(adminContainerApp) \
-                  --resource-group $(prodResourceGroup) \
-                  --query "[?properties.active==\`true\` && name!='${ADMIN_NEW_REV}'].name" \
-                  -o tsv)
-
-                for REV in $ADMIN_OLD_REVISIONS; do
-                  echo "Deactivating old Admin revision: $REV"
-
-                  az containerapp revision deactivate \
-                    --name $(adminContainerApp) \
-                    --resource-group $(prodResourceGroup) \
-                    --revision "$REV"
-                done
-
-                echo "=========================================="
-                echo "PRODUCTION DEPLOYMENT SUCCESSFUL"
-                echo "=========================================="
-
-                echo "Storefront: $STORE_NEW_REV"
-                echo "Admin:      $ADMIN_NEW_REV"
+                echo "Production deployment verified."
+                echo "Storefront: $STORE_NEW"
+                echo "Admin: $ADMIN_NEW"
