@@ -418,7 +418,7 @@ stages:
 
 - stage: UpdateKubernetes
   displayName: Update Kubernetes Release in Git
-  dependsOn: DeployProd
+  dependsOn: SmokeTestStaging
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
   jobs:
